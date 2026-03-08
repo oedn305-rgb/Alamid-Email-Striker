@@ -1,41 +1,28 @@
-name: ALAMID_SMART_TIMING
-
+name: Alamid Strike Force 2026
 on:
-  schedule:
-    # يشتغل الساعة 8 صباحاً بتوقيت السعودية (5:00 UTC)
-    - cron: '0 5 * * *'
-    # يشتغل الساعة 4 عصراً بتوقيت السعودية (13:00 UTC)
-    - cron: '0 13 * * *'
-  workflow_dispatch: # تقدر تشغله يدوي بأي وقت
+  push:
+    branches: [ main ]
+  workflow_dispatch: # يخليك تشغله يدوياً متى ما بغيت
 
 jobs:
-  run-bot:
+  run-alamid:
     runs-on: ubuntu-latest
-    # نحدد وقت الجلسة بـ 6 ساعات كحد أقصى عشان يطفي ويرتاح
-    timeout-minutes: 360 
-    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: سحب الكود من المستودع
+        uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: إعداد لغة بايثون
+        uses: actions/setup-python@v2
         with:
           python-version: '3.9'
 
-      - name: Install Dependencies
-        run: |
-          pip install pyTelegramBotAPI google-generativeai requests
+      - name: تثبيت المكتبات
+        run: pip install pyTelegramBotAPI
 
-      - name: Run Alamid Bot
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+      - name: تشغيل المنصة بالترتيب
         run: |
-          # تشغيل الرادار أولاً لصيد الإيميلات الجديدة
+          # المرحلة الأولى: الصيد والإرسال (الرادار والمهاجم)
           python scraper.py
-          # ثم تشغيل المهاجم لإرسال الإيميلات (50 إيميل)
-          python striker.py
-          # ثم تشغيل البوت لاستقبال القضايا
+          
+          # المرحلة الثانية: فتح مكتب المحاماة (البوت)
           python ALAMID_STRIKE_FORCE.py
