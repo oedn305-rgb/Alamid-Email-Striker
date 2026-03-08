@@ -1,33 +1,47 @@
 import telebot
 import time
+import os
 
 # --- ضع توكن تليجرام حقك هنا مباشرة ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks" 
 
-# التأكد من وجود التوكن
-if not TOKEN or "هنا_" in TOKEN:
-    print("❌ خطأ: لم تضع التوكن داخل الكود!")
-    exit()
+# --- اسم ملف الإيميلات اللي عندك في المستودع ---
+EMAILS_FILE = "emails.txt" 
 
 bot = telebot.TeleBot(TOKEN)
 
-# رسالة الترحيب
+def load_emails():
+    """وظيفة لسحب الإيميلات من ملفك"""
+    if os.path.exists(EMAILS_FILE):
+        with open(EMAILS_FILE, "r") as f:
+            emails = [line.strip() for line in f.readlines() if "@" in line]
+            return emails
+    return []
+
 @bot.message_handler(commands=['start'])
 def welcome(message):
-    bot.reply_to(message, "⚖️ أهلاً بك في منصة العميد للذكاء القانوني.\n\nالمحرك يعمل بنجاح الآن! أرسل استفسارك وسيقوم المستشار بالرد عليك.")
+    emails = load_emails()
+    count = len(emails)
+    bot.reply_to(message, f"⚖️ منصة العميد جاهزة!\n\n📂 تم العثور على {count} إيميل في ملفك.\n🚀 المحرك جاهز لبدء عملية الاستقطاب.")
 
-# الرد على الرسائل (رد آلي ذكي وسريع)
-@bot.message_handler(func=lambda m: True)
-def handle_all(message):
-    user_msg = message.text
-    bot.reply_to(message, f"⏳ جاري تحليل قضيتك: ({user_msg})\n\nبناءً على الأنظمة السعودية لعام 2026، يتم الآن فحص الثغرات القانونية في ناجز. فضلاً انتظر الرد التفصيلي من المستشار.")
+@bot.message_handler(commands=['strike'])
+def start_strike(message):
+    emails = load_emails()
+    if not emails:
+        bot.reply_to(message, "❌ لم أجد إيميلات في الملف! تأكد من وجود ملف باسم emails.txt")
+        return
+    
+    bot.reply_to(message, f"🚀 بدأنا الصيد.. جاري مراسلة {len(emails)} عميل نخبة.")
+    for email in emails:
+        print(f"🎯 جاري استقطاب: {email}")
+        # هنا تحط كود الإرسال الفعلي
+        time.sleep(1) # تأخير بسيط لتجنب الحظر
 
 # تشغيل مستمر
 if __name__ == "__main__":
-    print("🚀 [منصة العميد]: البوت انطلق الآن بنجاح وبدون أخطاء!")
+    print("🚀 [منصة العميد]: محرك الاستقطاب من ملفاتك يعمل الآن!")
     while True:
         try:
             bot.polling(none_stop=True, interval=0, timeout=20)
         except Exception as e:
-            print(f"🔄 إعادة تشغيل: {e}")
             time.sleep(5)
