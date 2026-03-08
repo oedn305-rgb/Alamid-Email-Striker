@@ -1,58 +1,57 @@
 import requests
-import os
+import re
 import time
+import random
 
-# سحب المفتاح السري من إعدادات GitHub
-API_KEY = os.getenv("ALAMID_API_KEY")
-
-def fetch_all_saudi_domains():
-    # قائمة النطاقات الذهبية (وزارات، كبار المكاتب، وشركات كبرى)
-    target_domains = [
-        # قطاع العدل والقانون
-        "moj.gov.sa", "moj.sa", "sba.gov.sa", "mohr.gov.sa",
-        # قطاع العقارات والمقاولات
-        "nhc.sa", "redf.gov.sa", "saudibuild.com", "alkifah.com.sa",
-        # قطاع الشركات والمدراء
-        "aramco.com", "sabic.com", "stc.com.sa", "maaden.com.sa",
-        # نطاقات عامة للشركات السعودية
-        "chamber.org.sa", "riyadhchamber.com", "jeddahchamber.org.sa",
-        # مكاتب استشارات كبرى (أمثلة)
-        "al-adel.com.sa", "saudilegal.com", "alsabhan-alajlan.com"
+def alamid_earthquake_scraper():
+    # كلمات البحث "المفخخة" لجلب الإيميلات من قلب المواقع السعودية
+    queries = [
+        'site:sa "محامي" "@gmail.com"',
+        'site:sa "مكتب محاماة" "@outlook.com"',
+        'site:sa "عقارات" "الرياض" "@gmail.com"',
+        'site:sa "مدير" "شركة" "@gmail.com"',
+        'site:linkedin.com/in/ "Saudi" "Lawyer" "@gmail.com"',
+        'site:twitter.com "المحامي" "السعودية" "@gmail.com"',
+        'site:instagram.com "مكتب محاماة" "@gmail.com"',
+        '"@pro.com.sa" محاماة',
+        '"@legals.sa" شركة'
     ]
     
-    print(f"🚀 انطلاق رادار العميد لمسح {len(target_domains)} نطاق استراتيجي...")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+    }
     
-    total_found = 0
-    
-    for domain in target_domains:
-        # ملاحظة: الرابط مخصص لـ Hunter.io لأنه الأكثر استخداماً للنطاقات
-        url = f"https://api.hunter.io/v2/domain-search?domain={domain}&api_key={API_KEY}"
-        
+    all_found = set()
+    print("🌪️ بدأ إعصار العميد.. جاري سحب الملايين من قلب الإنترنت...")
+
+    for q in queries:
         try:
-            print(f"📡 فحص النطاق: {domain} ...")
-            response = requests.get(url, timeout=10)
-            data = response.json()
+            # استخدام محرك بحث Google (بدون API) لسحب النتائج
+            url = f"https://www.google.com/search?q={q}&num=100"
+            response = requests.get(url, headers=headers, timeout=15)
             
-            if 'data' in data and data['data']['emails']:
-                emails = [e['value'] for e in data['data']['emails']]
-                with open("emails.txt", "a") as f:
-                    for email in emails:
-                        f.write(email + "\n")
-                
-                count = len(emails)
-                total_found += count
-                print(f"✅ تم صيد {count} إيميل رسمي من {domain}")
-            else:
-                print(f"➖ {domain}: لا توجد بيانات عامة متاحة حالياً.")
+            # استخراج الإيميلات من نص الصفحة بالكامل
+            emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', response.text)
             
-            # انتظار بسيط لتجنب ضغط الـ API
-            time.sleep(1)
+            clean_emails = {e.lower() for e in emails if not e.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'svg', 'js'))}
+            all_found.update(clean_emails)
+            
+            print(f"🔎 فحص: {q} ... تم صيد {len(clean_emails)} هدف.")
+            
+            # انتظار عشوائي ذكي عشان جوجل ما يزعل
+            time.sleep(random.randint(15, 30))
             
         except Exception as e:
-            print(f"⚠️ خطأ في فحص {domain}: {e}")
+            print(f"⚠️ واجهنا مطب، لكن العميد ما يتوقف!")
             continue
 
-    print(f"\n✨ انتهت المهمة! مجموع ما تم صيده: {total_found} هدف ذكي.")
+    if all_found:
+        with open("emails.txt", "a") as f:
+            for email in all_found:
+                f.write(email + "\n")
+        print(f"\n✅ كفو! تم حصد {len(all_found)} إيميل حقيقي ومباشر من السوق السعودي.")
+    else:
+        print("🌑 يبدو أن جوجل يحجب النتائج حالياً، جرب تشغيل الـ Action مرة أخرى بعد قليل.")
 
 if __name__ == "__main__":
-    fetch_all_saudi_domains()
+    alamid_earthquake_scraper()
