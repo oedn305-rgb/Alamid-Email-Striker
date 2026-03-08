@@ -1,7 +1,7 @@
 name: Send Marketing Emails
 
 on:
-  workflow_dispatch: # للتشغيل اليدوي
+  workflow_dispatch: # يخليك تشغله بيدك
 
 jobs:
   build:
@@ -13,13 +13,9 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: '3.x'
 
       - name: Run Striker
         env:
-          # نمرر المفاتيح من السيكرتس مباشرة للكود
-          MAILJET_API_KEY: ${{ secrets.MAILJET_API_KEY }}
-          MAILJET_SECRET_KEY: ${{ secrets.MAILJET_SECRET_KEY }}
-        run: |
-          # أمر التشغيل مع إظهار النتائج فوراً
-          python -u striker.py
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }} # 👈 هذا السطر هو اللي يحل مشكلة الـ Secrets
+        run: python striker.py
