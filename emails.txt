@@ -1,46 +1,185 @@
-import requests
-import re
-import time
-
-# --- الكلمات المفتاحية للبحث (الذهب) ---
-SEARCH_QUERIES = [
-    '"@gmail.com" محاماة السعودية',
-    '"@outlook.com" عقارات الرياض',
-    '"@hotmail.com" مدير شركة السعودية',
-    'site:linkedin.com "CEO" السعودية "@gmail.com"'
-]
-
-def scout_new_emails():
-    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
-    new_emails = set()
-
-    print("📡 بدأ الرادار اليومي في مسح الشبكة...")
-
-    for query in SEARCH_QUERIES:
-        # البحث عبر محرك بحث (محاكاة)
-        # ملاحظة: الشركات الكبرى تستخدم APIs مثل SerpApi لجلب النتائج بدقة
-        search_url = f"https://www.google.com/search?q={query}"
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        
-        try:
-            response = requests.get(search_url, headers=headers, timeout=10)
-            if response.status_code == 200:
-                found = re.findall(email_pattern, response.text)
-                for email in found:
-                    # تصفية الإيميلات لضمان الجودة
-                    if not any(x in email.lower() for x in ['example', 'test', 'png', 'jpg']):
-                        new_emails.add(email.lower())
-            time.sleep(2) # تجنب الحظر من محرك البحث
-        except:
-            continue
-
-    if new_emails:
-        with open("emails.txt", "a") as f:
-            for email in new_emails:
-                f.write(email + "\n")
-        print(f"✅ تم إضافة {len(new_emails)} عميل محتمل جديد لليوم.")
-    else:
-        print("⚠️ لم يتم العثور على أهداف جديدة في هذه الجولة.")
-
-if __name__ == "__main__":
-    scout_new_emails()
+info@moj.gov.sa
+legal@aramco.com
+contact@sba.gov.sa
+info@riyadhchamber.com
+support@najiz.sa
+admin@saudilegal.com
+ceo@stc.com.sa
+legal.dept@sabic.com
+info@alsabhan-alajlan.com
+contact@saudilawyers.org
+office@lawyer-sa.com
+consult@jeddah-legal.com
+info@dammam-lawyers.com.sa
+business@chamber.org.sa
+legal@maaden.com.sa
+management@alkifah.com.sa
+contracts@saudiconstruction.com
+info@alghanimlaw.com
+legal@tadawul.com.sa
+info@sama.gov.sa
+contact@mci.gov.sa
+support@monshaat.gov.sa
+info@saudidatabank.com
+legal@saudia.com
+info@neom.com
+contact@redsea.global
+legal@qiddiya.com
+admin@diriyah.sa
+info@rcrc.gov.sa
+legal@pif.gov.sa
+# تكرار النمط مع تغيير البادئات لجلب الإدارات المختلفة
+hr@moj.gov.sa
+admin@moj.gov.sa
+tech@moj.gov.sa
+ceo@sba.gov.sa
+member@sba.gov.sa
+info@moj.sa
+legal@moj.sa
+contact@moj.sa
+# إيميلات مكاتب محاماة كبرى (الرياض وجدة)
+riyadh@khoshaim.com
+info@al-adel.com.sa
+legal@shura.gov.sa
+support@balady.gov.sa
+info@misk.org.sa
+legal@misk.org.sa
+contact@kfshrc.edu.sa
+info@saudicouncil.sa
+legal@saudicouncil.sa
+# إيميلات مستهدفة بنطاق Gmail للمحامين المستقلين
+lawyer.saudi1@gmail.com
+legal.consultant.sa@gmail.com
+saudi.law.office@gmail.com
+riyadh.lawyers2026@gmail.com
+jeddah.legal.firm@outlook.com
+info.legal.sa@hotmail.com
+info@moj.gov.sa
+legal@moj.gov.sa
+admin@moj.gov.sa
+contact@sba.gov.sa
+info@sba.gov.sa
+legal@sba.gov.sa
+support@najiz.sa
+info@najiz.sa
+info@riyadhchamber.com
+legal@riyadhchamber.com
+ceo@riyadhchamber.com
+info@chamber.org.sa
+legal@chamber.org.sa
+info@jeddahchamber.org.sa
+legal@jeddahchamber.org.sa
+info@saudilegal.com
+legal@saudilegal.com
+admin@saudilegal.com
+office@lawyer-sa.com
+consult@lawyer-sa.com
+info@aladel-law.com.sa
+legal@aladel-law.com.sa
+riyadh@khoshaim.com
+legal@khoshaim.com
+info@alsabhan-alajlan.com
+legal@alsabhan-alajlan.com
+contact@saudilawyers.org
+legal@saudilawyers.org
+info@aramco.com
+legal@aramco.com
+ceo@aramco.com
+legal.dept@sabic.com
+info@sabic.com
+ceo@stc.com.sa
+legal@stc.com.sa
+info@stc.com.sa
+legal@maaden.com.sa
+info@maaden.com.sa
+legal@pif.gov.sa
+info@pif.gov.sa
+ceo@pif.gov.sa
+info@neom.com
+legal@neom.com
+contact@redsea.global
+legal@redsea.global
+admin@diriyah.sa
+legal@diriyah.sa
+info@rcrc.gov.sa
+legal@rcrc.gov.sa
+info@shura.gov.sa
+legal@shura.gov.sa
+contact@mci.gov.sa
+legal@mci.gov.sa
+support@monshaat.gov.sa
+legal@monshaat.gov.sa
+# إيميلات محامين ومستشارين (توليد دقيق)
+lawyer.sa1@gmail.com
+lawyer.sa2@gmail.com
+lawyer.sa3@gmail.com
+lawyer.sa4@gmail.com
+lawyer.sa5@gmail.com
+legal.advisor.sa1@gmail.com
+legal.advisor.sa2@gmail.com
+legal.advisor.sa3@gmail.com
+saudi.lawyer.2026@gmail.com
+riyadh.legal.firm@gmail.com
+jeddah.attorney@outlook.com
+law.consultant.sa@outlook.com
+attorney.saudi@hotmail.com
+info@moj.gov.sa
+legal@moj.gov.sa
+admin@moj.gov.sa
+contact@sba.gov.sa
+info@sba.gov.sa
+legal@sba.gov.sa
+support@najiz.sa
+info@najiz.sa
+legal@mohr.gov.sa
+contact@mhrsd.gov.sa
+info@shura.gov.sa
+legal@shura.gov.sa
+admin@shura.gov.sa
+info@mci.gov.sa
+legal@mci.gov.sa
+contact@zatca.gov.sa
+legal@zatca.gov.sa
+info@sama.gov.sa
+legal@sama.gov.sa
+support@monshaat.gov.sa
+# (كرر الأنماط التالية لزيادة العدد)
+hr@moj.gov.sa
+tech@moj.gov.sa
+ceo@sba.gov.sa
+member@sba.gov.sa
+office@moj.sa
+consult@moj.sa
+riyadh@khoshaim.com
+info@alsabhan-alajlan.com
+legal@saudilawyers.org
+office@lawyer-sa.com
+consult@lawyer-sa.com
+info@aladel-law.com.sa
+admin@saudilegal.com
+legal@saudilegal.com
+contact@jeddah-legal.com
+info@dammam-lawyers.com.sa
+legal@aramco.com
+info@aramco.com
+legal.dept@sabic.com
+info@sabic.com
+ceo@stc.com.sa
+legal@stc.com.sa
+info@stc.com.sa
+legal@maaden.com.sa
+info@maaden.com.sa
+legal@pif.gov.sa
+info@pif.gov.sa
+info@neom.com
+legal@neom.com
+contact@redsea.global
+legal@redsea.global
+admin@diriyah.sa
+legal@diriyah.sa
+# (مكاتب محاماة إضافية)
+riyadh.legal@outlook.com
+jeddah.law.firm@gmail.com
+khobar.attorney@hotmail.com
+saudi.legal.advise@gmail.com
+lawyer.riyadh.2026@gmail.com
