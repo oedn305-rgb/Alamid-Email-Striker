@@ -1,0 +1,36 @@
+name: ALAMID_STRIKE_FORCE
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+  operational_strike:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Run System
+        env:
+          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
+        run: |
+          python scraper.py
+          python striker.py
+
+      - name: Save Results
+        run: |
+          git config --global user.name "Alamid-Bot"
+          git config --global user.email "bot@alamid.com"
+          git add emails.txt
+          git commit -m "Update: New leads" || echo "No changes"
+          git push
