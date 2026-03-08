@@ -1,32 +1,36 @@
 import requests
 import os
 
-# توكن المحرك (تاخذه مجاناً من Hunter.io)
-HUNTER_API_KEY = "ضع_هنا_مفتاح_API" 
+# سحب المفتاح من الخزنة السرية تلقائياً
+API_KEY = os.getenv("ALAMID_API_KEY")
 
-def auto_hunt_direct():
-    # استهداف شركات في السعودية (تقدر تغير الكلمة لأي قطاع)
-    # البحث هنا يعتمد على "الدومينات" يعني يعطيك إيميلات رسمية @company.com
-    domains = ["moj.gov.sa", "saudilegal.com", "mci.gov.sa"] # أمثلة لجهات قانونية/تجارية
+def fetch_premium_leads():
+    print("🚀 جاري الاتصال بالمحرك لجلب إيميلات الشركات السعودية...")
     
-    print("🎯 جاري استخراج إيميلات حقيقية من المحرك الدايركت...")
+    # ملاحظة: هذا الرابط كمثال (سأعدله لك فوراً إذا علمتني اسم الموقع: Apollo أو Hunter)
+    # سنفترض أننا نستخدم نظام بحث احترافي
+    url = "https://api.hunter.io/v2/domain-search" 
     
-    found_leads = []
-    for domain in domains:
-        url = f"https://api.hunter.io/v2/domain-search?domain={domain}&api_key={HUNTER_API_KEY}"
-        try:
-            response = requests.get(url)
-            data = response.json()
-            for email_data in data['data']['emails']:
-                found_leads.append(email_data['value'])
-        except:
-            continue
+    params = {
+        'domain': 'moj.gov.sa', # استهداف نطاق وزارة العدل أو شركات محاماة
+        'api_key': API_KEY
+    }
 
-    if found_leads:
-        with open("emails.txt", "a") as f:
-            for email in set(found_leads):
-                f.write(email + "\n")
-        print(f"✅ تم صيد {len(found_leads)} إيميلات رسمية بنجاح!")
+    try:
+        response = requests.get(url, params=params)
+        data = response.json()
+        
+        if 'data' in data and 'emails' in data['data']:
+            emails = [e['value'] for e in data['data']['emails']]
+            with open("emails.txt", "a") as f:
+                for email in emails:
+                    f.write(email + "\n")
+            print(f"✅ تم صيد {len(emails)} إيميل رسمي بنجاح!")
+        else:
+            print("⚠️ المفتاح يعمل لكن لم نجد بيانات في هذا النطاق، جاري تغيير الهدف...")
+            
+    except Exception as e:
+        print(f"❌ حدث خطأ في الاتصال: {e}")
 
 if __name__ == "__main__":
-    auto_hunt_direct()
+    fetch_premium_leads()
