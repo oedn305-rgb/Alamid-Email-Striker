@@ -6,60 +6,60 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 
+# جلب البيانات من Secrets بأمان
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 
-def anti_block_strike():
+def daily_safe_strike():
+    # 1. قراءة الإيميلات
     try:
         with open("emails.txt", "r", encoding="utf-8") as f:
-            targets = [line.strip() for line in f if "@" in line]
+            all_targets = [line.strip() for line in f if "@" in line]
     except Exception as e:
         print(f"❌ خطأ في الملف: {e}")
         return
 
-    # كلمات للتبديل (عشان كل رسالة تطلع مختلفة شوي)
-    greetings = ["السلام عليكم ورحمة الله", "تحية طيبة وبعد،", "مساء الخير،", "أهلاً بكم،"]
-    closings = ["تحياتنا،", "مع التقدير،", "فريق العمل،", "شكراً لكم،"]
+    # 2. تحديد "أول 100 هدف" فقط لليوم
+    daily_limit = 100
+    targets = all_targets[:daily_limit]
 
-    print(f"🚀 بدء الإرسال الآمن لـ {len(targets)} هدف...")
+    print(f"🎯 مستعد لإرسال الدفعة اليومية ({len(targets)} هدف) بأمان تام...")
 
-    # إرسال فردي (إيميل لكل شخص) - هذا أضمن بكثير من الـ BCC للكميات الكبيرة
+    # نصوص متنوعة لكسر نمط الآلي
+    greetings = ["السلام عليكم ورحمة الله،", "تحية طيبة وبعد،", "مساء الخير،"]
+    subjects = ["بخصوص حلول الذكاء الاصطناعي القانونية", "دعوة لتجربة نظام العميد الذكي 🇸🇦", "تطوير الخدمات الرقمية للمحامين"]
+
     for index, target in enumerate(targets):
         try:
             msg = MIMEMultipart()
             msg['From'] = f"العميد للتقنية <{EMAIL_USER}>"
             msg['To'] = target
-            
-            # تغيير العنوان بشكل عشوائي بسيط
-            subjects = ["تطوير الأنظمة القانونية", "حلول الذكاء الاصطناعي للمحامين", "استفسار بخصوص الخدمات الرقمية"]
             msg['Subject'] = Header(random.choice(subjects), 'utf-8')
 
-            # بناء نص متغير
-            body = f"{random.choice(greetings)}\n\nنقدم لكم بوت العميد الذكي المتخصص في الأنظمة السعودية.\nجرب المستقبل هنا: [رابط البوت]\n\n{random.choice(closings)}"
+            body = f"{random.choice(greetings)}\n\nنقدم لكم بوت العميد الذكي، المساعد التقني الأول المتوافق مع الأنظمة السعودية وصياغة العقود.\n\nيمكنكم تجربة البوت هنا: [رابط بوتك هنا]\n\nشكراً لوقتكم،\nفريق تطوير العميد 🦾"
             msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
+            # تنفيذ الإرسال
             server = smtplib.SMTP('smtp.gmail.com', 587)
             server.starttls()
             server.login(EMAIL_USER, EMAIL_PASS)
             server.sendmail(EMAIL_USER, target, msg.as_string())
             server.quit()
 
-            print(f"✅ تم الإرسال إلى {target} ({index+1}/{len(targets)})")
+            print(f"✅ [{index+1}/100] تم الإرسال إلى: {target}")
 
-            # 🕒 استراحة "بشرية" (بين 20 إلى 45 ثانية بين كل إيميل)
-            # هذا يخليك ترسل طول اليوم بدون ما تنكشف
-            wait = random.randint(20, 45)
-            time.sleep(wait)
-
-            # كل 50 إيميل خذ استراحة طويلة (10 دقائق) عشان تبرد السيرفر
-            if (index + 1) % 50 == 0:
-                print("💤 استراحة طويلة لمدة 10 دقائق لضمان الأمان...")
-                time.sleep(600)
+            # 🕒 استراحة "بشرية" متغيرة (بين 45 و 90 ثانية)
+            # هذا هو السر عشان إيميلك ما ينحظر أبداً
+            wait_time = random.randint(45, 90)
+            print(f"💤 استراحة أمان لمدة {wait_time} ثانية...")
+            time.sleep(wait_time)
 
         except Exception as e:
-            print(f"⚠️ فشل مع {target}: {e}")
-            time.sleep(60)
+            print(f"⚠️ خطأ مع {target}: {e}")
+            time.sleep(30)
             continue
 
+    print("🏁 كفو! تم الانتهاء من إرسال الـ 100 إيميل المخصصة لليوم.")
+
 if __name__ == "__main__":
-    anti_block_strike()
+    daily_safe_strike()
