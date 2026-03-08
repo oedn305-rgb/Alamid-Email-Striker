@@ -3,71 +3,57 @@ import telebot
 import google.generativeai as genai
 import time
 
-# --- إعدادات الهوية والتوكن (تُسحب تلقائياً من Secrets) ---
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-GEMINI_KEY = os.getenv("GEMINI_KEY")
+# --- الربط المباشر بالأسماء الموجودة في الـ Secrets عندك ---
+CHIME_BOT_TOKEN = os.getenv("MS_APP_PASS")      # توكن تليجرام
+GEMINI_API_KEY = os.getenv("ALAMID_API_KEY")    # مفتاح الذكاء الاصطناعي
 
 # إعداد الذكاء الاصطناعي (Gemini)
-if GEMINI_KEY:
-    genai.configure(api_key=GEMINI_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash') # النسخة الأسرع والأذكى لعام 2026
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
 else:
-    print("❌ خطأ: مفتاح GEMINI_KEY مفقود في الـ Secrets!")
+    print("❌ خطأ: ALAMID_API_KEY غير موجود في الـ Secrets")
 
-# --- دستور المحامي العميد (مخ البوت السيادي) ---
+# تهيئة البوت
+if CHIME_BOT_TOKEN:
+    bot = telebot.TeleBot(CHIME_BOT_TOKEN)
+else:
+    print("❌ خطأ: MS_APP_PASS غير موجود في الـ Secrets")
+
+# --- دستور المحامي العميد (المخ القانوني) ---
 SYSTEM_PROMPT = """
-أنت الآن (المحامي العميد الرقمي)، المرجع القانوني الأعلى والسيادي في المملكة العربية السعودية لعام 2026. 
-مهمتك: تحليل وسرد أضخم وأعقد القضايا القانونية (عقارية، جنائية، تجارية، أحوال شخصية، عمالية) بدقة متناهية.
-
-القواعد الصارمة لردودك:
-1. التحليل والحل الجذري: لا تقبل الإجابات السطحية. فكك الوقائع، استخرج الثغرات القانونية، وقدم الحل النظامي الصادم والناجح فوراً.
-2. المرجعية السيادية: مرجعك هو (نظام المعاملات المدنية السعودي الجديد، نظام الإجراءات الجزائية، نظام المرافعات الشرعية، وأنظمة منصة ناجز).
-3. قوة السرد والهيبة: استخدم لغة قانونية رصينة وفخمة توحي بالثقة المطلقة للمستخدم والرهبة للخصوم.
-4. التوجيه العملي: وجّه المستخدم للخطوة القادمة بدقة (طريقة رفع الدعوى، صياغة لائحة، أو اعتراض).
-5. السرعة والدقة: أنت أسرع من أي مكتب محاماة، وردك ينهي الجدل.
+أنت (المحامي العميد)، المرجع القانوني الرقمي الأعلى في السعودية لعام 2026. 
+مهمتك: تحليل وسرد القضايا (ناجز، تجاري، جنائي، عقاري) بدقة المحامي الخبير.
+عند استلام قضية: فكك الوقائع، استخرج الثغرات القانونية، وأعطِ الحل النظامي فوراً من الأنظمة السعودية.
+لغتك: رصينة، قوية، وتوحي بالثقة المطلقة.
 """
-
-# تهيئة بوت تليجرام
-if TELEGRAM_TOKEN:
-    bot = telebot.TeleBot(TELEGRAM_TOKEN)
-else:
-    print("❌ خطأ: توكن تليجرام مفقود!")
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
-    welcome_text = (
-        "⚖️ مرحباً بك في منصة العميد للذكاء القانوني 2026.\n\n"
-        "أنا مستشارك القانوني الذكي، مجهز بأحدث الأنظمة السعودية لتحليل قضاياك وسرد الحلول القانونية بدقة (ناجز).\n\n"
-        "📩 أرسل تفاصيل قضيتك الآن ليتم تحليلها فوراً وبأعلى مستوى من الخبرة."
-    )
-    bot.reply_to(message, welcome_text)
+    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد للذكاء القانوني.\n\nمستشارك الذكي جاهز لسرد وتحليل أعقد القضايا السعودية. أرسل تفاصيل قضيتك الآن.")
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     try:
-        # إرسال رسالة انتظار "هيبة" للعميل
-        waiting_msg = bot.reply_to(message, "⏳ جاري تحليل القضية بناءً على الأنظمة السعودية وفحص الثغرات في منصة ناجز...")
+        # إشعار العميل ببدء التحليل
+        waiting_msg = bot.reply_to(message, "⏳ جاري تحليل القضية بناءً على الأنظمة السعودية وفحص ثغرات ناجز...")
         
-        # دمج أمر النظام مع سؤال العميل للحصول على رد "جامد"
-        full_query = f"{SYSTEM_PROMPT}\n\nقضية العميل للتحليل: {message.text}"
-        
-        # طلب الرد من الذكاء الاصطناعي
+        # إرسال القضية للذكاء الاصطناعي مع دستور العميد
+        full_query = f"{SYSTEM_PROMPT}\n\nقضية للتحليل: {message.text}"
         response = model.generate_content(full_query)
-        final_answer = response.text
         
-        # إرسال الرد النهائي
-        bot.edit_message_text(final_answer, message.chat.id, waiting_msg.message_id)
+        # عرض الرد القانوني النهائي
+        bot.edit_message_text(response.text, message.chat.id, waiting_msg.message_id)
         
     except Exception as e:
-        print(f"⚠️ خطأ أثناء المعالجة: {e}")
-        bot.reply_to(message, "⚠️ المستشار مشغول حالياً بتحليل قضايا كبرى، يرجى إعادة إرسال قضيتك بعد دقيقة.")
+        print(f"⚠️ خطأ: {e}")
+        bot.reply_to(message, "⏳ المستشار مشغول قليلاً بتحليل قضايا كبرى، يرجى المحاولة مرة أخرى.")
 
-# --- تشغيل البوت بنظام 24/7 (لا يتوقف عند الأخطاء) ---
+# --- نظام التشغيل المستمر ---
 if __name__ == "__main__":
-    print("🚀 [منصة العميد]: المحرك القانوني يعمل الآن.. توجه لتليجرام وجربه!")
+    print("🚀 [منصة العميد]: المحرك يعمل بالأسماء الخاصة بك...")
     while True:
         try:
             bot.polling(none_stop=True, interval=0, timeout=20)
         except Exception as e:
-            print(f"❌ انقطع الاتصال، إعادة المحاولة... {e}")
             time.sleep(5)
