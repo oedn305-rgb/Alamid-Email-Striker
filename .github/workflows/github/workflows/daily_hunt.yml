@@ -1,26 +1,30 @@
-name: Send Marketing Emails
-
+name: Alamid Complete System
 on:
-  workflow_dispatch: # يخليك تشغل الكود بيدك
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  alamid_job:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-policy: '3.9'
+          python-version: '3.9'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install Libs
+        run: pip install pyTelegramBotAPI
 
-      - name: Run Striker
+      - name: Run Scraper and Striker
+        run: |
+          python scraper.py
+          python striker.py
+
+      - name: Run Telegram Bot
         env:
-          # ربط الأسماء اللي في السيكرتس بالكود
-          MAILJET_API_KEY: ${{ secrets.MAILJET_API_KEY }}
-          MAILJET_SECRET_KEY: ${{ secrets.MAILJET_SECRET_KEY }}
-        run: python striker.py
+          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
+        run: python ALAMID_STRIKE_FORCE.py
