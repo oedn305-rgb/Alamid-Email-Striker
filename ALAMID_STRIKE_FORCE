@@ -3,57 +3,45 @@ import telebot
 import google.generativeai as genai
 import time
 
-# --- الربط المباشر بالأسماء الموجودة في الـ Secrets عندك ---
-CHIME_BOT_TOKEN = os.getenv("MS_APP_PASS")      # توكن تليجرام
-GEMINI_API_KEY = os.getenv("ALAMID_API_KEY")    # مفتاح الذكاء الاصطناعي
+# سحب المفاتيح من السيكرتس اللي عندك (خلك على أساميك)
+TOKEN = os.getenv("MS_APP_PASS")        # توكن تليجرام
+API_KEY = os.getenv("ALAMID_API_KEY")  # مفتاح قوقل
 
-# إعداد الذكاء الاصطناعي (Gemini)
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
-else:
-    print("❌ خطأ: ALAMID_API_KEY غير موجود في الـ Secrets")
+# إعداد المحرك (Gemini 1.5 Flash) - الأسرع والأكثر تحملاً للضغط
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-# تهيئة البوت
-if CHIME_BOT_TOKEN:
-    bot = telebot.TeleBot(CHIME_BOT_TOKEN)
-else:
-    print("❌ خطأ: MS_APP_PASS غير موجود في الـ Secrets")
+bot = telebot.TeleBot(TOKEN)
 
-# --- دستور المحامي العميد (المخ القانوني) ---
+# دستور العميد القانوني ⚖️
 SYSTEM_PROMPT = """
-أنت (المحامي العميد)، المرجع القانوني الرقمي الأعلى في السعودية لعام 2026. 
-مهمتك: تحليل وسرد القضايا (ناجز، تجاري، جنائي، عقاري) بدقة المحامي الخبير.
-عند استلام قضية: فكك الوقائع، استخرج الثغرات القانونية، وأعطِ الحل النظامي فوراً من الأنظمة السعودية.
-لغتك: رصينة، قوية، وتوحي بالثقة المطلقة.
+أنت (المحامي العميد)، مستشار قانوني سعودي خبير.
+ردودك يجب أن تكون: سردية، مفصلة، مدعمة بالأنظمة السعودية (مثل نظام المعاملات المدنية).
+إذا سألك العميل، حلل القضية كأنك في قاعة محكمة.
 """
 
-@bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد للذكاء القانوني.\n\nمستشارك الذكي جاهز لسرد وتحليل أعقد القضايا السعودية. أرسل تفاصيل قضيتك الآن.")
-
-@bot.message_handler(func=lambda message: True)
+@bot.message_handler(func=lambda m: True)
 def handle_message(message):
     try:
-        # إشعار العميل ببدء التحليل
-        waiting_msg = bot.reply_to(message, "⏳ جاري تحليل القضية بناءً على الأنظمة السعودية وفحص ثغرات ناجز...")
+        # رسالة هيبة فورية
+        waiting = bot.reply_to(message, "⏳ جاري استحضار النصوص النظامية وتحليل القضية...")
         
-        # إرسال القضية للذكاء الاصطناعي مع دستور العميد
-        full_query = f"{SYSTEM_PROMPT}\n\nقضية للتحليل: {message.text}"
-        response = model.generate_content(full_query)
+        # طلب الرد
+        response = model.generate_content(f"{SYSTEM_PROMPT}\n\nالسؤال: {message.text}")
         
-        # عرض الرد القانوني النهائي
-        bot.edit_message_text(response.text, message.chat.id, waiting_msg.message_id)
+        # تعديل الرد وإرساله
+        bot.edit_message_text(response.text, message.chat.id, waiting.message_id)
         
     except Exception as e:
-        print(f"⚠️ خطأ: {e}")
-        bot.reply_to(message, "⏳ المستشار مشغول قليلاً بتحليل قضايا كبرى، يرجى المحاولة مرة أخرى.")
+        print(f"🔄 محاولة إنعاش البوت: {e}")
+        time.sleep(2) # راحة بسيطة قبل إعادة المحاولة
 
-# --- نظام التشغيل المستمر ---
+# --- نظام "القلب النابض" (التشغيل الأبدي) ---
 if __name__ == "__main__":
-    print("🚀 [منصة العميد]: المحرك يعمل بالأسماء الخاصة بك...")
+    print("🚀 [منصة العميد]: النظام بدأ.. لن يتوقف بإذن الله.")
     while True:
         try:
-            bot.polling(none_stop=True, interval=0, timeout=20)
+            bot.polling(none_stop=True, interval=1, timeout=60)
         except Exception as e:
+            print(f"⚠️ حدث انقطاع، إعادة تشغيل تلقائية خلال 5 ثوانٍ... {e}")
             time.sleep(5)
