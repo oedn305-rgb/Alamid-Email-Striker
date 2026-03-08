@@ -4,10 +4,12 @@ import os
 import sys
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email.utils import formataddr
 
 # --- إعدادات الحساب ---
-SENDER_EMAIL = "اكتب_إيميلك_هنا@gmail.com"  # 👈 حط إيميلك الـ Gmail هنا
-GMAIL_APP_PASSWORD = os.getenv("GMAIL_PASS") # هذا بيقرأ الكود الأصفر من السيكرتس
+SENDER_EMAIL = "اكتب_إيميلك_هنا@gmail.com"  # 👈 تأكد من وضع إيميلك هنا
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_PASS")
 
 # إعدادات سيرفر جوجل
 SMTP_SERVER = "smtp.gmail.com"
@@ -36,9 +38,14 @@ def start_mission():
     for index, email in enumerate(emails[:100]):
         try:
             msg = MIMEMultipart()
-            msg['From'] = f"منصة العميد ⚖️ <{SENDER_EMAIL}>"
+            
+            # --- حل مشكلة العربي في اسم المرسل ---
+            sender_name = str(Header('منصة العميد ⚖️', 'utf-8'))
+            msg['From'] = formataddr((sender_name, SENDER_EMAIL))
             msg['To'] = email
-            msg['Subject'] = "تنبيه نظامي: منصة العميد للذكاء القانوني"
+            
+            # --- حل مشكلة العربي في العنوان ---
+            msg['Subject'] = Header('تنبيه نظامي: منصة العميد للذكاء القانوني', 'utf-8').encode()
             
             body = "مرحباً، منصة العميد تمنحك القوة القانونية عبر الذكاء الاصطناعي.\nتجربة مجانية: https://t.me/Alamid_Bot"
             msg.attach(MIMEText(body, 'plain', 'utf-8'))
@@ -50,7 +57,7 @@ def start_mission():
             server.quit()
             
             log(f"✅ [{index+1}] تم الإرسال بنجاح إلى: {email}")
-            time.sleep(15) # راحة للأمان
+            time.sleep(15) 
             
         except Exception as e:
             log(f"❌ فشل الإرسال لـ {email}: {str(e)}")
