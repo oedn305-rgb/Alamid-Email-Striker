@@ -1,11 +1,12 @@
 name: Alamid Final Strike 2026
+# هذا الجزء هو المسؤول عن ظهور زر التشغيل اليدوي
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # هذا السطر السحري اللي يطلع لك زر "Run Workflow"
 
 jobs:
-  run-system:
+  run-alamid:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -19,24 +20,14 @@ jobs:
       - name: Install Libs
         run: pip install pyTelegramBotAPI
 
-      - name: تشغيل الرادار والمهاجم
+      - name: تشغيل المهاجم (الإرسال)
         env:
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }} # ربط السيكرت بالكود
-        run: |
-          python scraper.py
-          python striker.py
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+        run: python striker.py
 
- - name: تشغيل مكتب العميد (البوت)
+      - name: تشغيل البوت (العميد)
         env:
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
         run: |
-          # البحث عن أي ملف يبدأ بكلمة ALAMID وينتهي بـ .py
-          TARGET_FILE=$(ls ALAMID*.py | head -n 1)
-          
-          if [ -z "$TARGET_FILE" ]; then
-            echo "❌ خطأ: لم يتم العثور على أي ملف يبدأ بـ ALAMID ويحمل صيغة .py"
-            exit 1
-          else
-            echo "✅ تم العثور على الملف: $TARGET_FILE"
-            python "$TARGET_FILE"
-          fi
+          FILE=$(ls ALAMID*.py | head -n 1)
+          python "$FILE"
