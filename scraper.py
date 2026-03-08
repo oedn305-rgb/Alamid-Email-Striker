@@ -1,57 +1,67 @@
-import requests
-import re
-import time
-import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
 
-def alamid_earthquake_scraper():
-    # كلمات البحث "المفخخة" لجلب الإيميلات من قلب المواقع السعودية
-    queries = [
-        'site:sa "محامي" "@gmail.com"',
-        'site:sa "مكتب محاماة" "@outlook.com"',
-        'site:sa "عقارات" "الرياض" "@gmail.com"',
-        'site:sa "مدير" "شركة" "@gmail.com"',
-        'site:linkedin.com/in/ "Saudi" "Lawyer" "@gmail.com"',
-        'site:twitter.com "المحامي" "السعودية" "@gmail.com"',
-        'site:instagram.com "مكتب محاماة" "@gmail.com"',
-        '"@pro.com.sa" محاماة',
-        '"@legals.sa" شركة'
-    ]
+# تأكد أنك وضعت هذه البيانات في Settings > Secrets في مستودعك
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
+
+def strike_one_shot():
+    # 1. قراءة الـ 1,000 إيميل من ملف emails.txt
+    try:
+        with open("emails.txt", "r") as f:
+            # تنظيف القائمة والتأكد من وجود إيميلات حقيقية
+            targets = [line.strip() for line in f if "@" in line]
+    except FileNotFoundError:
+        print("❌ خطأ: ملف emails.txt غير موجود!")
+        return
+
+    if not targets:
+        print("❌ ملف الإيميلات فارغ!")
+        return
+
+    print(f"🚀 جاري تجهيز الهجوم لـ {len(targets)} هدف قانوني...")
+
+    # 2. إعداد الرسالة (عرض العميد الصاعق)
+    msg = MIMEMultipart()
+    msg['From'] = f"Alamid AI <{EMAIL_USER}>"
+    msg['To'] = EMAIL_USER  # ترسلها لنفسك وتضع الباقي مخفي
+    msg['Subject'] = "⚖️ دعوة للنخبة: بوت المحامي السعودي الذكي - مستقبل القانون"
+
+    body = """
+    السلام عليكم ورحمة الله وبركاته،
     
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-    }
+    يسرنا دعوتكم لتجربة "بوت العميد الذكي" 🇸🇦.
+    أول نظام ذكاء اصطناعي متخصص في الأنظمة السعودية لخدمة المحامين والمستشارين.
     
-    all_found = set()
-    print("🌪️ بدأ إعصار العميد.. جاري سحب الملايين من قلب الإنترنت...")
+    ✅ صياغة مذكرات وعقود في ثوانٍ.
+    ✅ استشارات قانونية فورية بناءً على الأنظمة المحدثة.
+    ✅ توفير 90% من وقت البحث في "ناجز" واللوائح.
+    
+    جرب البوت الآن مجاناً عبر الرابط التالي:
+    [ضع رابط بوتك هنا]
+    
+    تحياتنا،
+    فريق تطوير العميد 🦾
+    """
+    msg.attach(MIMEText(body, 'plain'))
 
-    for q in queries:
-        try:
-            # استخدام محرك بحث Google (بدون API) لسحب النتائج
-            url = f"https://www.google.com/search?q={q}&num=100"
-            response = requests.get(url, headers=headers, timeout=15)
-            
-            # استخراج الإيميلات من نص الصفحة بالكامل
-            emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', response.text)
-            
-            clean_emails = {e.lower() for e in emails if not e.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'svg', 'js'))}
-            all_found.update(clean_emails)
-            
-            print(f"🔎 فحص: {q} ... تم صيد {len(clean_emails)} هدف.")
-            
-            # انتظار عشوائي ذكي عشان جوجل ما يزعل
-            time.sleep(random.randint(15, 30))
-            
-        except Exception as e:
-            print(f"⚠️ واجهنا مطب، لكن العميد ما يتوقف!")
-            continue
-
-    if all_found:
-        with open("emails.txt", "a") as f:
-            for email in all_found:
-                f.write(email + "\n")
-        print(f"\n✅ كفو! تم حصد {len(all_found)} إيميل حقيقي ومباشر من السوق السعودي.")
-    else:
-        print("🌑 يبدو أن جوجل يحجب النتائج حالياً، جرب تشغيل الـ Action مرة أخرى بعد قليل.")
+    # 3. تنفيذ "الضربة الواحدة" (BCC)
+    try:
+        # الاتصال بسيرفر Gmail
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(EMAIL_USER, EMAIL_PASS)
+        
+        # إرسال الرسالة للكل دفعة واحدة (مخفي)
+        server.sendmail(EMAIL_USER, targets, msg.as_string())
+        server.quit()
+        
+        print(f"✅ كفو! تم إرسال العرض لـ {len(targets)} شخص في رسالة واحدة بنجاح.")
+        
+    except Exception as e:
+        print(f"❌ فشل الإرسال: {e}")
 
 if __name__ == "__main__":
-    alamid_earthquake_scraper()
+    strike_one_shot()
