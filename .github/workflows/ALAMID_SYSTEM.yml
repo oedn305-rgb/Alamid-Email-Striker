@@ -1,21 +1,41 @@
-name: Send Marketing Emails
+name: ALAMID_SMART_TIMING
 
 on:
-  workflow_dispatch: # يخليك تشغله بيدك
+  schedule:
+    # يشتغل الساعة 8 صباحاً بتوقيت السعودية (5:00 UTC)
+    - cron: '0 5 * * *'
+    # يشتغل الساعة 4 عصراً بتوقيت السعودية (13:00 UTC)
+    - cron: '0 13 * * *'
+  workflow_dispatch: # تقدر تشغله يدوي بأي وقت
 
 jobs:
-  build:
+  run-bot:
     runs-on: ubuntu-latest
+    # نحدد وقت الجلسة بـ 6 ساعات كحد أقصى عشان يطفي ويرتاح
+    timeout-minutes: 360 
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.9'
 
-      - name: Run Striker
+      - name: Install Dependencies
+        run: |
+          pip install pyTelegramBotAPI google-generativeai requests
+
+      - name: Run Alamid Bot
         env:
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }} # 👈 هذا السطر هو اللي يحل مشكلة الـ Secrets
-        run: python striker.py
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+        run: |
+          # تشغيل الرادار أولاً لصيد الإيميلات الجديدة
+          python scraper.py
+          # ثم تشغيل المهاجم لإرسال الإيميلات (50 إيميل)
+          python striker.py
+          # ثم تشغيل البوت لاستقبال القضايا
+          python ALAMID_STRIKE_FORCE.py
