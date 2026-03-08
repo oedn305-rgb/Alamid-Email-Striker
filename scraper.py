@@ -1,67 +1,65 @@
 import smtplib
+import time
+import random
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import os
+from email.header import Header
 
-# تأكد أنك وضعت هذه البيانات في Settings > Secrets في مستودعك
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 
-def strike_one_shot():
-    # 1. قراءة الـ 1,000 إيميل من ملف emails.txt
+def anti_block_strike():
     try:
-        with open("emails.txt", "r") as f:
-            # تنظيف القائمة والتأكد من وجود إيميلات حقيقية
+        with open("emails.txt", "r", encoding="utf-8") as f:
             targets = [line.strip() for line in f if "@" in line]
-    except FileNotFoundError:
-        print("❌ خطأ: ملف emails.txt غير موجود!")
-        return
-
-    if not targets:
-        print("❌ ملف الإيميلات فارغ!")
-        return
-
-    print(f"🚀 جاري تجهيز الهجوم لـ {len(targets)} هدف قانوني...")
-
-    # 2. إعداد الرسالة (عرض العميد الصاعق)
-    msg = MIMEMultipart()
-    msg['From'] = f"Alamid AI <{EMAIL_USER}>"
-    msg['To'] = EMAIL_USER  # ترسلها لنفسك وتضع الباقي مخفي
-    msg['Subject'] = "⚖️ دعوة للنخبة: بوت المحامي السعودي الذكي - مستقبل القانون"
-
-    body = """
-    السلام عليكم ورحمة الله وبركاته،
-    
-    يسرنا دعوتكم لتجربة "بوت العميد الذكي" 🇸🇦.
-    أول نظام ذكاء اصطناعي متخصص في الأنظمة السعودية لخدمة المحامين والمستشارين.
-    
-    ✅ صياغة مذكرات وعقود في ثوانٍ.
-    ✅ استشارات قانونية فورية بناءً على الأنظمة المحدثة.
-    ✅ توفير 90% من وقت البحث في "ناجز" واللوائح.
-    
-    جرب البوت الآن مجاناً عبر الرابط التالي:
-    [ضع رابط بوتك هنا]
-    
-    تحياتنا،
-    فريق تطوير العميد 🦾
-    """
-    msg.attach(MIMEText(body, 'plain'))
-
-    # 3. تنفيذ "الضربة الواحدة" (BCC)
-    try:
-        # الاتصال بسيرفر Gmail
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(EMAIL_USER, EMAIL_PASS)
-        
-        # إرسال الرسالة للكل دفعة واحدة (مخفي)
-        server.sendmail(EMAIL_USER, targets, msg.as_string())
-        server.quit()
-        
-        print(f"✅ كفو! تم إرسال العرض لـ {len(targets)} شخص في رسالة واحدة بنجاح.")
-        
     except Exception as e:
-        print(f"❌ فشل الإرسال: {e}")
+        print(f"❌ خطأ في الملف: {e}")
+        return
+
+    # كلمات للتبديل (عشان كل رسالة تطلع مختلفة شوي)
+    greetings = ["السلام عليكم ورحمة الله", "تحية طيبة وبعد،", "مساء الخير،", "أهلاً بكم،"]
+    closings = ["تحياتنا،", "مع التقدير،", "فريق العمل،", "شكراً لكم،"]
+
+    print(f"🚀 بدء الإرسال الآمن لـ {len(targets)} هدف...")
+
+    # إرسال فردي (إيميل لكل شخص) - هذا أضمن بكثير من الـ BCC للكميات الكبيرة
+    for index, target in enumerate(targets):
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = f"العميد للتقنية <{EMAIL_USER}>"
+            msg['To'] = target
+            
+            # تغيير العنوان بشكل عشوائي بسيط
+            subjects = ["تطوير الأنظمة القانونية", "حلول الذكاء الاصطناعي للمحامين", "استفسار بخصوص الخدمات الرقمية"]
+            msg['Subject'] = Header(random.choice(subjects), 'utf-8')
+
+            # بناء نص متغير
+            body = f"{random.choice(greetings)}\n\nنقدم لكم بوت العميد الذكي المتخصص في الأنظمة السعودية.\nجرب المستقبل هنا: [رابط البوت]\n\n{random.choice(closings)}"
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login(EMAIL_USER, EMAIL_PASS)
+            server.sendmail(EMAIL_USER, target, msg.as_string())
+            server.quit()
+
+            print(f"✅ تم الإرسال إلى {target} ({index+1}/{len(targets)})")
+
+            # 🕒 استراحة "بشرية" (بين 20 إلى 45 ثانية بين كل إيميل)
+            # هذا يخليك ترسل طول اليوم بدون ما تنكشف
+            wait = random.randint(20, 45)
+            time.sleep(wait)
+
+            # كل 50 إيميل خذ استراحة طويلة (10 دقائق) عشان تبرد السيرفر
+            if (index + 1) % 50 == 0:
+                print("💤 استراحة طويلة لمدة 10 دقائق لضمان الأمان...")
+                time.sleep(600)
+
+        except Exception as e:
+            print(f"⚠️ فشل مع {target}: {e}")
+            time.sleep(60)
+            continue
 
 if __name__ == "__main__":
-    strike_one_shot()
+    anti_block_strike()
