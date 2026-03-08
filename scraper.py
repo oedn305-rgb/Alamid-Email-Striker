@@ -5,15 +5,13 @@ import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# --- إعدادات Mailjet (الجديدة) ---
+# إعدادات Mailjet (التي نعتمد عليها الآن)
 SMTP_SERVER = "in-v3.mailjet.com"
 SMTP_PORT = 587
 
-# سحب المفاتيح الجديدة فقط
+# جلب المفاتيح من الخزنة (تأكد أن الأسماء مطابقة لما وضعته في Secrets)
 API_KEY = os.getenv("MAILJET_API_KEY") 
 SECRET_KEY = os.getenv("MAILJET_SECRET_KEY")
-
-# إيميلك المعتمد
 SENDER_EMAIL = "Alamid.Systems.2026@outlook.com"
 
 def send_lawyer_email(target_email):
@@ -27,53 +25,3 @@ def send_lawyer_email(target_email):
 مرحباً بك،
 
 عالم الأنظمة السعودية يتطور بسرعة، ومنصة "العميد" تمنحك القوة القانونية عبر الذكاء الاصطناعي.
-حلل قضاياك، استخرج ثغراتك، واحمل حقك بقوة نظام 2026.
-
-🔗 ابدأ تجربة الـ 7 أيام مجاناً عبر تليجرام:
-https://t.me/Alamid_Bot
-
-منصة العميد - شريكك القانوني الذكي.
-        """
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
-
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        # هنا نستخدم المفاتيح الجديدة (API_KEY و SECRET_KEY)
-        server.login(API_KEY, SECRET_KEY) 
-        server.send_message(msg)
-        server.quit()
-        return True
-    except Exception as e:
-        print(f"❌ خطأ في الإرسال لـ {target_email}: {e}")
-        return False
-
-def run_campaign():
-    # التحقق من مفاتيح Mailjet حصراً
-    if not API_KEY or not SECRET_KEY:
-        print("❌ خطأ: مفاتيح Mailjet (API_KEY/SECRET_KEY) غير موجودة في الـ Secrets!")
-        return
-
-    if not os.path.exists("emails.txt"):
-        print("❌ خطأ: ملف emails.txt غير موجود!")
-        return
-
-    with open("emails.txt", "r") as f:
-        emails = [line.strip() for line in f.readlines() if line.strip()]
-
-    if not emails:
-        print("⚠️ قائمة الإيميلات فارغة!")
-        return
-
-    print(f"🚀 [منصة العميد]: انطلاق الحملة.. المستهدف {len(emails[:100])} جهة.")
-
-    for index, email in enumerate(emails[:100]):
-        if send_lawyer_email(email):
-            print(f"✅ [{index+1}/100] تم الإرسال بنجاح: {email}")
-        
-        if index < len(emails[:100]) - 1:
-            wait_time = random.randint(60, 90)
-            print(f"⏳ انتظار {wait_time} ثانية للأمان...")
-            time.sleep(wait_time)
-
-if __name__ == "__main__":
-    run_campaign()
