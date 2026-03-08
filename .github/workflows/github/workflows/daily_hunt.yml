@@ -1,39 +1,26 @@
-name: ALAMID_FORCE_2026
+name: Send Marketing Emails
 
 on:
-  workflow_dispatch: # هذا السطر هو اللي بيطلع لك زر التشغيل اليدوي
-  schedule:
-    - cron: '0 5 * * *'
+  workflow_dispatch: # يخليك تشغل الكود بيدك
 
 jobs:
-  strike_operation:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: 1. جلب الكود
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: 2. تجهيز البايثون
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-policy: '3.9'
 
-      - name: 3. تثبيت المكتبات
-        run: |
-          pip install requests
-          # التأكد من وجود ملف الإيميلات إذا كان محذوفاً
-          if [ ! -f emails.txt ]; then touch emails.txt; fi
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - name: 4. انطلاق النظام
+      - name: Run Striker
         env:
-          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
-        run: |
-          python scraper.py
-          python striker.py
-
-      - name: 5. حفظ النتائج
-        run: |
-          git config --global user.name "Alamid-Bot"
-          git config --global user.email "bot@alamid.com"
-          git add emails.txt
-          git commit -m "Update: Leads acquired" || echo "No changes to commit"
-          git push
+          # ربط الأسماء اللي في السيكرتس بالكود
+          MAILJET_API_KEY: ${{ secrets.MAILJET_API_KEY }}
+          MAILJET_SECRET_KEY: ${{ secrets.MAILJET_SECRET_KEY }}
+        run: python striker.py
