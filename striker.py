@@ -15,10 +15,10 @@ def log(msg):
     sys.stdout.flush()
 
 def start_mission():
-    log("🚀 [Alamid System]: Starting safe delivery engine...")
+    log("🚀 [منصة العميد]: بدء محرك الإرسال الآمن...")
     
     if not GMAIL_APP_PASSWORD:
-        log("❌ Error: GMAIL_PASS is missing in GitHub Secrets!")
+        log("❌ خطأ: مفتاح GMAIL_PASS مفقود في GitHub Secrets!")
         return
 
     try:
@@ -26,12 +26,12 @@ def start_mission():
         with open("emails.txt", "r", encoding="utf-8") as f:
             emails = [line.strip() for line in f.readlines() if line.strip()]
     except:
-        log("❌ Error: emails.txt not found!")
+        log("❌ خطأ: ملف emails.txt غير موجود!")
         return
 
     # تحديد العدد بـ 50 شخص فقط لضمان عدم الحظر
     target_list = emails[:50]
-    log(f"📊 Safe Mode: Sending to {len(target_list)} people today.")
+    log(f"📊 وضع الأمان: سيتم الإرسال لـ {len(target_list)} شخص اليوم.")
 
     for index, email in enumerate(target_list):
         try:
@@ -39,12 +39,20 @@ def start_mission():
             msg = MIMEMultipart()
             msg['From'] = f"Alamid Systems <{SENDER_EMAIL}>"
             msg['To'] = target
-            msg['Subject'] = "Alamid System | منصة العميد"
+            msg['Subject'] = "Alamid System | منصة العميد للذكاء القانوني"
 
+            # النص المعدل باسم منصة العميد وبوتك
             body = """
 مرحباً بك،
-منصة العميد تمنحك القوة القانونية عبر الذكاء الاصطناعي.
-🔗 تجربة الـ 7 أيام مجاناً عبر تليجرام: https://t.me/Alamid_Bot
+
+نحن في "منصة العميد" نضع بين يديك القوة القانونية مدعومة بأحدث تقنيات الذكاء الاصطناعي لعام 2026.
+
+يسرنا دعوتك لتجربة نظامنا القانوني الذكي مجاناً لمدة 7 أيام عبر منصة تليجرام.
+
+🔗 رابط التجربة المباشر: https://t.me/Alamid_Bot
+
+مع تحيات،
+فريق منصة العميد ⚖️
             """
             msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
@@ -55,16 +63,16 @@ def start_mission():
             server.send_message(msg)
             server.quit()
             
-            log(f"✅ [{index+1}/50] Sent successfully to: {target}")
+            log(f"✅ [{index+1}/50] تم الإرسال بنجاح إلى: {target}")
             
-            # فاصل زمني طويل وعشوائي (60-90 ثانية) لمحاكاة الإرسال البشري وتجنب السبام
-            wait_time = random.randint(60, 90)
-            if index < len(target_list) - 1: # لا تنتظر بعد آخر إيميل
-                log(f"⏳ Waiting {wait_time} seconds for safety...")
+            # فاصل زمني طويل وعشوائي (60-90 ثانية) لمحاكاة الإرسال البشري
+            if index < len(target_list) - 1:
+                wait_time = random.randint(60, 90)
+                log(f"⏳ انتظار {wait_time} ثانية للأمان...")
                 time.sleep(wait_time)
             
         except Exception as e:
-            log(f"❌ Failed for {email}: {str(e)}")
+            log(f"❌ فشل الإرسال لـ {email}: {str(e)}")
 
 if __name__ == "__main__":
     start_mission()
