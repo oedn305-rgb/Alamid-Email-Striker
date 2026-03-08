@@ -1,72 +1,63 @@
-import requests
-import re
-import time
-import random
+import os
+import telebot
+import google.generativeai as genai
 
-def scout_for_leads():
-    # كلمات الصيد الذهبية - تستهدف أصحاب القرار في السعودية لعام 2026
-    search_queries = [
-        'site:sa "law" "@gmail.com"',
-        'site:sa "محاماة" "@outlook.com"',
-        'site:linkedin.com/in/ "CEO" "Saudi Arabia" "@gmail.com"',
-        'site:linkedin.com/in/ "مدير" "السعودية" "@outlook.com"',
-        'site:twitter.com "محامي" "السعودية" "@gmail.com"',
-        'site:sa "عقارات" "@hotmail.com"',
-        'site:sa "شركة" "الرياض" "@gmail.com"'
-    ]
-    
-    found_emails = set()
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
+# --- إعدادات الهوية والتوكن ---
+# تأكد أنك وضعت التوكنات في Secrets بأسماء (TELEGRAM_TOKEN) و (GEMINI_KEY)
+CHIME_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_KEY")
 
-    print("📡 بدأ رادار العميد بمسح الشبكة عن أهداف جديدة...")
+# إعداد الذكاء الاصطناعي (Gemini)
+genai.configure(api_key=GEMINI_API_KEY)
 
-    for query in search_queries:
-        try:
-            # البحث عبر محرك البحث
-            url = f"https://www.google.com/search?q={query}"
-            response = requests.get(url, headers=headers, timeout=15)
-            
-            # استخراج الإيميلات باستخدام النمط المتقدم
-            emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', response.text)
-            
-            for email in emails:
-                email_lower = email.lower()
-                # تصفية: استبعاد الصور والملفات غير المفيدة
-                if not email_lower.endswith(('png', 'jpg', 'jpeg', 'gif', 'pdf', 'svg')):
-                    found_emails.add(email_lower)
-            
-            print(f"🔍 تم فحص: {query} ... وجدنا {len(emails)} إيميل")
-            
-            # استراحة عشوائية عشان جوجل ما يشك فينا
-            time.sleep(random.randint(5, 10))
-            
-        except Exception as e:
-            print(f"⚠️ خطأ بسيط في البحث: {e}")
-            continue
+# --- دستور المحامي العميد (مخ البوت السيادي) ---
+SYSTEM_PROMPT = """
+أنت الآن (المحامي العميد الرقمي)، المرجع القانوني الأعلى والسيادي في المملكة العربية السعودية لعام 2026. 
+مهمتك: تحليل وسرد أضخم وأعقد القضايا القانونية (عقارية بمليارات، جنائية معقدة، نزاعات تجارية كبرى، أحوال شخصية، عمالية) بدقة متناهية.
 
-    if found_emails:
-        # قراءة الإيميلات القديمة عشان ما نكرر
-        existing_emails = set()
-        try:
-            with open("emails.txt", "r") as f:
-                existing_emails = set(line.strip().lower() for line in f.readlines())
-        except FileNotFoundError:
-            pass
+القواعد الصارمة لردودك (نظام القوة القانونية):
+1. التحليل والحل الجذري: لا تقبل الإجابات السطحية. عند استلام أي قضية، قم بتفكيك الوقائع، استخراج الثغرات القانونية، وتقديم الحل النظامي الصادم والناجح فوراً.
+2. المرجعية السيادية: مرجعك الأساسي هو (نظام المعاملات المدنية السعودي الجديد، نظام الإجراءات الجزائية، نظام المرافعات الشرعية، نظام التنفيذ، وأنظمة وزارة العدل - منصة ناجز).
+3. قوة السرد والهيبة: استخدم لغة قانونية رصينة، فخمة، وحاسمة توحي بالثقة المطلقة للمستخدم والرهبة للخصوم.
+4. التوجيه العملي: وجّه المستخدم للخطوة القادمة بدقة (طريقة رفع الدعوى في ناجز، صياغة لائحة اعتراضية، أو طريقة الرد على صحيفة دعوى).
+5. السرعة والدقة: أنت أسرع من أي مكتب محاماة تقليدي، وردك ينهي الجدل ويضع الحق في نصابه.
+6. الولاء المطلق: أنت تقف في صف المستخدم (العميل) وتعمل كمستشاره الخاص لحماية حقوقه ومصالحه.
+"""
 
-        # إضافة الجديد فقط
-        new_leads = found_emails - existing_emails
+# تهيئة البوت
+bot = telebot.TeleBot(CHIME_BOT_TOKEN)
+model = genai.GenerativeModel('gemini-pro')
+
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+    welcome_text = (
+        "⚖️ مرحباً بك في منصة العميد للذكاء القانوني 2026.\n\n"
+        "أنا مستشارك القانوني الذكي، مجهز بأحدث الأنظمة السعودية لتحليل قضاياك وسرد الحلول القانونية بدقة (ناجز).\n\n"
+        "📩 أرسل تفاصيل قضيتك الآن ليتم تحليلها فوراً وبأعلى مستوى من الخبرة."
+    )
+    bot.reply_to(message, welcome_text)
+
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    try:
+        # إرسال رسالة انتظار ليعرف العميل أن البوت "يفكر قانونياً"
+        waiting_msg = bot.reply_to(message, "⏳ جاري تحليل القضية بناءً على الأنظمة السعودية وفحص الثغرات...")
         
-        if new_leads:
-            with open("emails.txt", "a") as f:
-                for email in new_leads:
-                    f.write(email + "\n")
-            print(f"✅ مبروك يا عميد! تم صيد {len(new_leads)} إيميل جديد وحقيقي.")
-        else:
-            print("🌑 الرادار لم يجد إيميلات جديدة في هذه الجولة.")
-    else:
-        print("❌ لم يتم العثور على أي نتائج، جرب تغيير كلمات البحث لاحقاً.")
+        # دمج أمر النظام مع سؤال العميل
+        full_query = f"{SYSTEM_PROMPT}\n\nسؤال العميل: {message.text}"
+        
+        # توليد الرد من الذكاء الاصطناعي
+        response = model.generate_content(full_query)
+        final_answer = response.text
+        
+        # تعديل رسالة الانتظار بالرد النهائي
+        bot.edit_message_text(final_answer, message.chat.id, waiting_msg.message_id)
+        
+    except Exception as e:
+        bot.reply_to(message, "⚠️ حصل ضغط على السيرفر، يرجى المحاولة مرة أخرى أو اختصار تفاصيل القضية.")
+        print(f"Error: {e}")
 
+# تشغيل البوت
 if __name__ == "__main__":
-    scout_for_leads()
+    print("🚀 [منصة العميد]: البوت يعمل الآن وجاهز لحل القضايا...")
+    bot.polling(none_stop=True)
