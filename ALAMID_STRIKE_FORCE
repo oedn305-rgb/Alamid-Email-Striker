@@ -1,30 +1,38 @@
 import telebot
-import google.generativeai as genai
+from duckduckgo_search import DDGS
 import time
-try:
-    import keys # بنسوي هذا الملف بعد شوي
-except:
-    print("الملف ناقص")
 
-# ربط المفاتيح مباشرة
-TOKEN = keys.TELEGRAM_TOKEN
-API_KEY = keys.GEMINI_KEY
+# --- ضع توكن تليجرام الخاص بك هنا فقط ---
+TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks" # استبدله بتوكن بوتك
 
-# إعداد المحرك
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
 bot = telebot.TeleBot(TOKEN)
 
-@bot.message_handler(func=lambda m: True)
-def handle(message):
+def get_ai_response(user_input):
+    """جلب رد الذكاء الاصطناعي بدون مفتاح API"""
     try:
-        # رد فوري عشان تعرف إنه شغال
-        print(f"وصلت رسالة: {message.text}")
-        res = model.generate_content(f"أنت المحامي العميد، حلل بسرد قانوني: {message.text}")
-        bot.reply_to(message, res.text)
+        with DDGS() as ddgs:
+            prompt = f"أنت المحامي العميد، خبير قانوني سعودي. حلل هذه القضية بسرد فخم: {user_input}"
+            # نستخدم محرك GPT-4 (مجاني عبر DuckDuckGo)
+            results = ddgs.chat(prompt, model='gpt-4o-mini')
+            return results
     except Exception as e:
-        bot.reply_to(message, "⏳ ثواني وأرد عليك يا غالي..")
+        print(f"Error: {e}")
+        return "⏳ المستشار مشغول قليلاً، حاول مرة أخرى."
+
+@bot.message_handler(func=lambda m: True)
+def handle_message(message):
+    try:
+        # إشعار بالاستلام
+        waiting = bot.reply_to(message, "⏳ جاري فحص الأنظمة السعودية وتحليل القضية...")
+        
+        # الحصول على الرد
+        ai_reply = get_ai_response(message.text)
+        
+        # إرسال الرد النهائي
+        bot.edit_message_text(ai_reply, message.chat.id, waiting.message_id)
+    except Exception as e:
+        bot.reply_to(message, "⚠️ عذراً، حدث خطأ فني بسيط.")
 
 if __name__ == "__main__":
-    print("🚀 البوت انطلق.. جربه الحين")
+    print("🚀 [منصة العميد]: البوت يعمل الآن بدون مفتاح Gemini!")
     bot.infinity_polling()
