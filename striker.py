@@ -6,44 +6,46 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # --- الإعدادات الفنية ---
-# ملاحظة: يفضل وضع كلمة السر في GitHub Secrets باسم MS_APP_PASS
-SENDER_EMAIL = "Alamid.Systems.2026@outlook.com"
-APP_PASSWORD = os.getenv("MS_APP_PASS") # يسحب الـ 16 حرف من الإعدادات السرية
+# تأكد من وضع الـ 16 حرف في GitHub Secrets باسم MS_APP_PASS
+SENDER_EMAIL = "Lawyer.Meshal.SA@outlook.com" 
+APP_PASSWORD = os.getenv("MS_APP_PASS") 
 
 def send_marketing_email(target_email):
-    """وظيفة إرسال الرسالة التسويقية"""
+    """وظيفة إرسال الرسالة التسويقية بنظام العميد"""
     try:
         # 1. تجهيز هيكل الرسالة
         msg = MIMEMultipart()
-        msg['From'] = f"العميد - المستشار الذكي ⚖️ <{SENDER_EMAIL}>"
+        msg['From'] = f"منصة العميد - ذكاء قانوني ⚖️ <{SENDER_EMAIL}>"
         msg['To'] = target_email
-        msg['Subject'] = "⚠️ تنبيه نظامي: هل أعمالكم محمية من ثغرات 2026؟"
+        msg['Subject'] = "⚠️ تنبيه نظامي: ثغرات قانونية قد تكلفكم الكثير في 2026"
 
-        # 2. محتوى الرسالة (الرسالة التي تجذب الملايين)
+        # 2. محتوى الرسالة (صياغة قانونية تسويقية احترافية)
         body = f"""
-        مرحباً بك،
-        
-        عالم الأنظمة السعودية يتغير بسرعة، وتجاهل ثغرة واحدة قد يكلفك الكثير.
-        نحن هنا لنمنحك القوة.
-        
-        يسرنا دعوتك لتجربة "العميد" - أول محرك ذكاء اصطناعي متخصص في كشف الثغرات القانونية السعودية.
-        
-        🔹 تحليل فوري للقضايا (جنائي، تجاري، عقاري، عمالي).
-        🔹 استخراج ثغرات مبنية على أحدث مبادئ المحكمة العليا 2026.
-        🔹 تجربة مجانية بالكامل لمدة 7 أيام.
-        
-        🔗 ابدأ الحماية الآن عبر تليجرام: [ضع رابط بوتك هنا]
-        
-        بعد الفترة التجريبية، يمكنك الاستمرار في الخدمة عبر باقاتنا الميسرة.
-        
-        منصة العميد - لا تترك حقك للصدفة.
+أهلاً بك،
+
+عالم الأنظمة السعودية في 2026 يتطور بسرعة مذهلة، والبقاء في القمة يتطلب أدوات ذكية.
+
+يسرنا في "منصة العميد" دعوتك لتجربة أول محرك ذكاء اصطناعي متخصص في كشف الثغرات القانونية السعودية وتفنيد مذكرات الخصوم بناءً على أحدث مبادئ المحكمة العليا.
+
+💡 ما الذي يقدمه لك "العميد"؟
+✅ تحليل فوري للمذكرات (جنائي، تجاري، أحوال شخصية).
+✅ استنباط الثغرات النظامية في ثوانٍ.
+✅ صياغة ردود قانونية محكمة ومفصلة.
+
+🎁 هدية خاصة لك:
+نمنحك تجربة مجانية بالكامل لمدة 7 أيام لاستكشاف قوة النظام.
+
+🔗 ابدأ الحماية الآن وانضم لنخبة المحامين عبر تليجرام:
+[ضع رابط بوت التليجرام هنا]
+
+منصة العميد - ذكاء يصنع الفرق في قضيتك.
         """
         
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
-        # 3. الاتصال بسيرفر مايكروسوفت وإرسال الإيميل
+        # 3. الاتصال بسيرفر مايكروسوفت
         server = smtplib.SMTP("smtp.office365.com", 587)
-        server.starttls() # تشفير الاتصال
+        server.starttls() 
         server.login(SENDER_EMAIL, APP_PASSWORD)
         server.send_message(msg)
         server.quit()
@@ -54,34 +56,41 @@ def send_marketing_email(target_email):
         return False
 
 def run_campaign():
-    """تشغيل الحملة التسويقية من ملف الإيميلات"""
+    """تشغيل الحملة من ملف الإيميلات"""
     if not APP_PASSWORD:
-        print("❌ خطأ: لم يتم العثور على MS_APP_PASS في الـ Secrets!")
+        print("❌ خطأ: لم يتم العثور على الرمز (MS_APP_PASS) في إعدادات GitHub Secrets!")
         return
 
-    # قراءة الإيميلات من الملف السري
+    # قراءة الإيميلات من ملف emails.txt
     try:
+        if not os.path.exists("emails.txt"):
+            print("❌ خطأ: ملف emails.txt غير موجود في المستودع!")
+            return
+            
         with open("emails.txt", "r") as file:
             emails = [line.strip() for line in file.readlines() if line.strip()]
-    except FileNotFoundError:
-        print("❌ خطأ: ملف emails.txt غير موجود!")
+    except Exception as e:
+        print(f"❌ خطأ أثناء قراءة الملف: {e}")
         return
 
-    print(f"🚀 انطلاق الحملة! استهداف {len(emails)} عميل محتمل...")
+    if not emails:
+        print("⚠️ تنبيه: ملف الإيميلات فارغ!")
+        return
+
+    print(f"🚀 انطلاق حملة 'العميد'! استهداف {len(emails)} عميل...")
 
     for index, email in enumerate(emails):
         success = send_marketing_email(email)
         if success:
-            print(f"✅ [{index+1}/{len(emails)}] تم الإرسال إلى: {email}")
+            print(f"✅ [{index+1}/{len(emails)}] تم الإرسال بنجاح إلى: {email}")
         
-        # --- استراتيجية "التسلل" للنجاة من الحظر ---
-        # ننتظر وقتاً عشوائياً بين 60 إلى 120 ثانية بين كل إرسال
-        wait_time = random.randint(60, 120)
-        if index < len(emails) - 1: # لا تنتظر بعد آخر إيميل
-            print(f"⏳ استراحة ذكية لمدة {wait_time} ثانية لتجنب الرقابة...")
+        # استراحة ذكية لتجنب الحظر (بين دقيقة ودقيقتين)
+        if index < len(emails) - 1:
+            wait_time = random.randint(60, 120)
+            print(f"⏳ استراحة لمدة {wait_time} ثانية للحفاظ على أمان الحساب...")
             time.sleep(wait_time)
 
-    print("🏁 اكتملت الحملة بنجاح. العميد في انتظار المشتركين الجدد!")
+    print("🏁 اكتملت حملة العميد بنجاح. في انتظار المشتركين!")
 
 if __name__ == "__main__":
     run_campaign()
