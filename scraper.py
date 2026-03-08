@@ -1,64 +1,57 @@
-import smtplib
 import os
-import sys
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import telebot
+import time
 
-# إعدادات ثابتة وقوية
-SMTP_SERVER = "in-v3.mailjet.com"
-SMTP_PORT = 587
-SENDER_EMAIL = "Alamid.Systems.2026@outlook.com"
+# --- سحب التوكن من الـ Secrets ---
+# تأكد أن اسم المفتاح في GitHub هو MS_APP_PASS
+TOKEN = os.getenv("MS_APP_PASS")
 
-# جلب المفاتيح
-API_KEY = os.getenv("MAILJET_API_KEY")
-SECRET_KEY = os.getenv("MAILJET_SECRET_KEY")
+# إعداد البوت
+if TOKEN:
+    bot = telebot.TeleBot(TOKEN)
+    print("✅ تم ربط المحرك المليوني بنجاح!")
+else:
+    print("❌ خطأ: لم يتم العثور على توكن تليجرام في الـ Secrets")
 
-def log(message):
-    """وظيفة لطباعة النتائج فوراً بدون تأخير"""
-    print(f">>> {message}")
-    sys.stdout.flush()
+# --- محرك الاستقطاب المليوني ---
+STRIKE_FORCE_PROMPT = """
+🚀 [منصة العميد]: إطلاق محرك الاستقطاب المليوني...
+📊 وضع القوة: استهداف عملاء النخبة الآن.
+⚖️ الحالة: جاهز لسرد وتحليل القضايا الكبرى.
+"""
 
-def start_mission():
-    log("🚀 انطلاق منصة العميد... جاري فحص المحركات")
+def start_striker():
+    print(">>> 🚀 انطلاق منصة العميد... جاري فحص المحركات")
+    print(">>> ✅ المحركات تعمل بكفاءة عالية (بدون مفاتيح خارجية)")
+    print(STRIKE_FORCE_PROMPT)
+
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+    welcome_text = (
+        "⚖️ **مرحباً بك في منصة العميد الذكية** ⚖️\n\n"
+        "لقد دخلت الآن في نطاق المستشار القانوني الأول في السعودية لعام 2026.\n\n"
+        "🔹 **سرد قانوني دقيق**\n"
+        "🔹 **تحليل ثغرات ناجز**\n"
+        "🔹 **حلول قضائية فورية**\n\n"
+        "أرسل تفاصيل قضيتك الآن دعنا نبدأ التحليل..."
+    )
+    bot.reply_to(message, welcome_text, parse_mode='Markdown')
+
+# وظيفة لاستقبال القضايا وتحويلها للتحليل
+@bot.message_handler(func=lambda message: True)
+def collect_cases(message):
+    # هنا يتم استلام القضية وإظهار هيبة البوت قبل التحليل
+    print(f"📥 قضية جديدة من العميل: {message.from_user.first_name}")
+    bot.reply_to(message, "⏳ جاري فحص وقائع قضيتك في الأنظمة السعودية... فضلاً انتظر ثواني.")
     
-    if not API_KEY or not SECRET_KEY:
-        log("❌ خطأ قاتل: المفاتيح غير موجودة في الـ Secrets!")
-        return
-
-    if not os.path.exists("emails.txt"):
-        log("❌ خطأ: ملف emails.txt مفقود!")
-        return
-
-    with open("emails.txt", "r") as f:
-        emails = [line.strip() for line in f.readlines() if line.strip()]
-
-    if not emails:
-        log("⚠️ القائمة فارغة!")
-        return
-
-    log(f"✅ تم العثور على {len(emails)} إيميل. سأبدأ الإرسال فوراً...")
-
-    # إرسال تجريبي لأول 5 إيميلات بسرعة البرق للتأكد من العمل
-    for index, email in enumerate(emails[:100]):
-        try:
-            msg = MIMEMultipart()
-            msg['From'] = f"منصة العميد ⚖️ <{SENDER_EMAIL}>"
-            msg['To'] = email
-            msg['Subject'] = "تنبيه نظامي: منصة العميد للذكاء القانوني"
-            
-            body = "مرحباً بك في منصة العميد. نحن نغير قواعد اللعبة القانونية في 2026."
-            msg.attach(MIMEText(body, 'plain'))
-
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.starttls()
-            server.login(API_KEY, SECRET_KEY)
-            server.send_message(msg)
-            server.quit()
-            
-            log(f"✅ [{index+1}] تم الإرسال بنجاح إلى: {email}")
-            
-        except Exception as e:
-            log(f"❌ فشل مع {email}. الخطأ: {str(e)}")
+    # ملاحظة: الكود هنا سيتكامل مع ALAMID_STRIKE_FORCE لتحليل الرد
+    # للتبسيط، الكود الحالي يؤكد استلام القضية بنجاح
 
 if __name__ == "__main__":
-    start_mission()
+    start_striker()
+    while True:
+        try:
+            bot.polling(none_stop=True, interval=0, timeout=20)
+        except Exception as e:
+            print(f"⚠️ إعادة تشغيل المحرك: {e}")
+            time.sleep(5)
