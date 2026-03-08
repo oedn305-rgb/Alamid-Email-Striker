@@ -15,60 +15,66 @@ def log(msg):
     sys.stdout.flush()
 
 def start_mission():
-    log("🚀 [منصة العميد]: بدء محرك الإرسال الآمن...")
+    log("🚀 [منصة العميد]: إطلاق محرك الاستقطاب المليوني...")
     
     if not GMAIL_APP_PASSWORD:
         log("❌ خطأ: مفتاح GMAIL_PASS مفقود في GitHub Secrets!")
         return
 
     try:
-        # قراءة الإيميلات بتنسيق يمنع أخطاء الـ ASCII
         with open("emails.txt", "r", encoding="utf-8") as f:
             emails = [line.strip() for line in f.readlines() if line.strip()]
     except:
         log("❌ خطأ: ملف emails.txt غير موجود!")
         return
 
-    # تحديد العدد بـ 50 شخص فقط لضمان عدم الحظر
-    target_list = emails[:50]
-    log(f"📊 وضع الأمان: سيتم الإرسال لـ {len(target_list)} شخص اليوم.")
+    target_list = emails[:50] # 50 شخص لضمان أعلى مستوى أمان لحسابك
+    log(f"📊 وضع القوة: استهداف {len(target_list)} عميل نخبة الآن.")
 
     for index, email in enumerate(target_list):
         try:
             target = email.strip()
             msg = MIMEMultipart()
-            msg['From'] = f"Alamid Systems <{SENDER_EMAIL}>"
+            msg['From'] = f"Alamid Systems | منصة العميد ⚖️ <{SENDER_EMAIL}>"
             msg['To'] = target
-            msg['Subject'] = "Alamid System | منصة العميد للذكاء القانوني"
+            msg['Subject'] = "فرصة نظامية: مستشارك القانوني الذكي بانتظارك (دعوة خاصة) ⚖️"
 
-            # النص المعدل باسم منصة العميد وبوتك
+            # نص احترافي "مغناطيسي" للاشتراك الفوري
             body = """
-مرحباً بك،
+بكل تقدير،
 
-نحن في "منصة العميد" نضع بين يديك القوة القانونية مدعومة بأحدث تقنيات الذكاء الاصطناعي لعام 2026.
+في عصر السرعة ونيوم 2026، لم يعد البحث التقليدي كافياً. نحن في "منصة العميد" نفتح لك أبواب المستقبل القانوني في المملكة العربية السعودية.
 
-يسرنا دعوتك لتجربة نظامنا القانوني الذكي مجاناً لمدة 7 أيام عبر منصة تليجرام.
+لماذا يشترك الآلاف في "المحامي الذكي" الآن؟
+✅ ذكاء اصطناعي يفهم الأنظمة السعودية بدقة 100%.
+✅ صياغة مذكرات، استشارات فنية، وتحليل ثغرات في ثوانٍ.
+✅ متاح لك 24/7.. مستشارك في جيبك أينما كنت.
 
-🔗 رابط التجربة المباشر: https://t.me/Alamid_Bot
+🎁 هدية حصرية لك:
+لقد تم اختيارك لتجربة "النسخة الاحترافية" مجاناً لمدة 7 أيام. لا تدع الفرصة تفوتك لتكون ضمن النخبة التي تدير أعمالها بذكاء.
+
+🔗 ابدأ التجربة الفورية الآن عبر تليجرام:
+https://t.me/SaudiLegal_AI_bot
+
+انضم لثورة القانون الذكي.. منصة العميد، حيث الهيبة والسرعة.
 
 مع تحيات،
-فريق منصة العميد ⚖️
+إدارة العمليات | منصة العميد ⚖️
             """
             msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
-            # الاتصال بسيرفر جوجل
             server = smtplib.SMTP("smtp.gmail.com", 587)
             server.starttls()
             server.login(SENDER_EMAIL, GMAIL_APP_PASSWORD)
             server.send_message(msg)
             server.quit()
             
-            log(f"✅ [{index+1}/50] تم الإرسال بنجاح إلى: {target}")
+            log(f"✅ [{index+1}/50] تم الإرسال بنجاح لـ: {target}")
             
-            # فاصل زمني طويل وعشوائي (60-90 ثانية) لمحاكاة الإرسال البشري
+            # فاصل أمان (60-90 ثانية)
             if index < len(target_list) - 1:
                 wait_time = random.randint(60, 90)
-                log(f"⏳ انتظار {wait_time} ثانية للأمان...")
+                log(f"⏳ أمان: ننتظر {wait_time} ثانية قبل الهدف التالي...")
                 time.sleep(wait_time)
             
         except Exception as e:
