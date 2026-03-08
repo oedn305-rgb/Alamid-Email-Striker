@@ -1,13 +1,27 @@
 import os
+import telebot
+import time
 
-def run_radar():
-    print("📡 [الرادار]: جاري فحص تحديثات ملف الإيميلات...")
-    if os.path.exists("emails.txt"):
-        with open("emails.txt", "r") as f:
-            count = len(f.readlines())
-        print(f"✅ الرادار أكد وجود {count} هدف في ملفك الحالي.")
-    else:
-        print("⚠️ الرادار لم يجد أهدافاً جديدة.")
+TOKEN = os.getenv("MS_APP_PASS")
+
+if not TOKEN:
+    print("❌ خطأ: لم يتم العثور على توكن تليجرام (MS_APP_PASS)!")
+    exit(1)
+
+bot = telebot.TeleBot(TOKEN)
+
+@bot.message_handler(commands=['start'])
+def welcome(message):
+    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد.\nتم الانتهاء من استقطاب العملاء، والمكتب مفتوح الآن لاستفساراتك.")
+
+@bot.message_handler(func=lambda m: True)
+def handle_case(message):
+    bot.reply_to(message, f"⏳ جاري تحليل قضيتك: ({message.text})\nبناءً على الأنظمة السعودية لعام 2026، يتم استخراج الثغرات الآن...")
 
 if __name__ == "__main__":
-    run_radar()
+    print("🚀 [منصة العميد]: البوت يعمل الآن...")
+    while True:
+        try:
+            bot.polling(none_stop=True)
+        except Exception:
+            time.sleep(5)
