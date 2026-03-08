@@ -1,87 +1,94 @@
 import smtplib
 import time
+import random
 import os
-import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# دالة لتنظيف النصوص من أي أحرف عربية مخفية أو مسافات
-def clean_text(text):
-    if text:
-        # حذف أي حرف غير قابل للطباعة أو أحرف التنسيق العربي المخفية
-        return re.sub(r'[^\x00-\x7f]', '', text).strip()
-    return None
+# --- إعدادات سيرفر Mailjet ---
+SMTP_SERVER = "in-v3.mailjet.com"
+SMTP_PORT = 587
 
-# إعدادات الحساب (تنظيف آلي)
-EMAIL_ADDRESS = clean_text("alamid.ai.bot@gmail.com")
-EMAIL_PASSWORD = clean_text(os.environ.get('MS_APP_PASS'))
+# سحب المفاتيح من GitHub Secrets (اللي أضفتها أنت قبل قليل)
+API_KEY = os.getenv("MAILJET_API_KEY") 
+SECRET_KEY = os.getenv("MAILJET_SECRET_KEY")
 
-def send_emails():
-    print("-" * 40)
-    print("🚀 [العميد التقني]: بدأت عملية التنظيف والإرسال..")
-    
-    if not EMAIL_PASSWORD:
-        print("❌ خطأ: لم يتم العثور على كلمة مرور التطبيق في Secrets!")
-        return
+# إيميلك المعتمد في Mailjet
+SENDER_EMAIL = "Alamid.Systems.2026@outlook.com"
 
-    # قراءة وتنظيف قائمة الإيميلات
+def send_lawyer_email(target_email):
+    """وظيفة إرسال الإيميل القانوني"""
     try:
-        with open('emails.txt', 'r', encoding='utf-8') as f:
-            emails = [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        print("❌ خطأ: ملف emails.txt غير موجود!")
-        return
+        msg = MIMEMultipart()
+        # الاسم اللي بيظهر للمستلم
+        msg['From'] = f"منصة العميد - ذكاء قانوني ⚖️ <{SENDER_EMAIL}>"
+        msg['To'] = target_email
+        msg['Subject'] = "⚠️ تنبيه نظامي: هل أعمالكم محمية من ثغرات 2026؟"
 
-    print(f"📧 المرسل: {EMAIL_ADDRESS}")
-    print(f"📋 القائمة تحتوي على {len(emails)} إيميل.")
-    
-    batch = emails[:100]
-    print(f"🎯 الهدف: أول {len(batch)} جهة قانونية.")
-    print("-" * 40)
+        # نص الرسالة
+        body = f"""
+مرحباً بك،
 
-    try:
-        print("🔌 جاري الاتصال بسيرفر Google...")
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.set_debuglevel(0)
+عالم الأنظمة السعودية يتغير بسرعة، ومنصة "العميد" تمنحك القوة القانونية عبر الذكاء الاصطناعي.
+حلل قضاياك، استخرج ثغراتك، واحمل حقك بقوة نظام 2026.
+
+💡 ماذا تقدم لك منصة العميد؟
+✅ تحليل المذكرات القانونية واستخراج الثغرات.
+✅ صياغة ردود قانونية محكمة بناءً على الأنظمة السعودية.
+✅ دعم فني قانوني ذكي على مدار الساعة.
+
+🔗 ابدأ تجربة الـ 7 أيام مجاناً عبر تليجرام:
+https://t.me/Alamid_Bot
+
+منصة العميد - شريكك القانوني الذكي.
+        """
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+        # تنفيذ عملية الإرسال
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
-        
-        # تسجيل الدخول بعد التنظيف
-        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        print("🔓 تم تسجيل الدخول بنجاح! الحملة بدأت:")
-        print("-" * 40)
-
-        for i, target_email in enumerate(batch, 1):
-            target_email = clean_text(target_email) # تنظيف إيميل المستلم أيضاً
-            try:
-                msg = MIMEMultipart()
-                msg['From'] = EMAIL_ADDRESS
-                msg['To'] = target_email
-                msg['Subject'] = "مساعد المحامي الذكي - عرض خاص"
-
-                body = (
-                    "سعادة المستشار،\n\n"
-                    "نهديكم أطيب التحيات، ونضع بين أيديكم بوت 'العميد' المطور "
-                    "بالذكاء الاصطناعي لخدمة المكاتب القانونية.\n\n"
-                    "يسعدنا تواصلكم."
-                )
-                msg.attach(MIMEText(body, 'plain', 'utf-8'))
-
-                server.send_message(msg)
-                print(f"✅ [{i}/{len(batch)}] أرسل إلى: {target_email}")
-                
-                if i < len(batch):
-                    time.sleep(60) # استراحة دقيقة
-
-            except Exception as e:
-                print(f"⚠️ خطأ في {target_email}: {e}")
-
+        # تسجيل الدخول بمفاتيح Mailjet
+        server.login(API_KEY, SECRET_KEY) 
+        server.send_message(msg)
         server.quit()
-        print("-" * 40)
-        print("🎉 انتهت المهمة بنجاح يا عميد!")
-
+        return True
     except Exception as e:
-        print(f"❌ فشل تسجيل الدخول: {e}")
-        print("💡 جرب إعادة كتابة كلمة السر في الـ Secrets يدوياً (بدون نسخ ولصق) إذا استمر الخطأ.")
+        print(f"❌ خطأ في الإرسال لـ {target_email}: {e}")
+        return False
+
+def run_campaign():
+    """تشغيل الحملة على قائمة الإيميلات"""
+    if not API_KEY or not SECRET_KEY:
+        print("❌ خطأ: مفاتيح Mailjet غير موجودة في الـ Secrets!")
+        return
+
+    # التأكد من وجود ملف الإيميلات
+    if not os.path.exists("emails.txt"):
+        print("❌ خطأ: ملف emails.txt مفقود!")
+        return
+
+    with open("emails.txt", "r") as f:
+        emails = [line.strip() for line in f.readlines() if line.strip()]
+
+    if not emails:
+        print("⚠️ القائمة فارغة!")
+        return
+
+    # إرسال لأول 100 إيميل
+    target_list = emails[:100]
+    print(f"🚀 [منصة العميد]: انطلاق الحملة.. المستهدف {len(target_list)} جهة.")
+
+    for index, email in enumerate(target_list):
+        if send_lawyer_email(email):
+            print(f"✅ [{index+1}/100] تم الإرسال بنجاح: {email}")
+        
+        # استراحة أمان (دقيقة تقريباً) عشان ما يحظرك السيرفر
+        if index < len(target_list) - 1:
+            wait_time = random.randint(60, 90)
+            print(f"⏳ انتظار {wait_time} ثانية للأمان...")
+            time.sleep(wait_time)
+
+    print("🏁 انتهت المهمة بنجاح يا سعادة المحامي!")
 
 if __name__ == "__main__":
-    send_emails()
+    run_campaign()
