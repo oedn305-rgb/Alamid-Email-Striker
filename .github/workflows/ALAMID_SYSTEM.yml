@@ -26,9 +26,17 @@ jobs:
           python scraper.py
           python striker.py
 
-      - name: تشغيل مكتب العميد (البوت)
+ - name: تشغيل مكتب العميد (البوت)
         env:
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
         run: |
-          # يشغل أي ملف يبدأ بـ ALAMID
-          python ALAMID*.py
+          # البحث عن أي ملف يبدأ بكلمة ALAMID وينتهي بـ .py
+          TARGET_FILE=$(ls ALAMID*.py | head -n 1)
+          
+          if [ -z "$TARGET_FILE" ]; then
+            echo "❌ خطأ: لم يتم العثور على أي ملف يبدأ بـ ALAMID ويحمل صيغة .py"
+            exit 1
+          else
+            echo "✅ تم العثور على الملف: $TARGET_FILE"
+            python "$TARGET_FILE"
+          fi
