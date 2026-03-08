@@ -1,36 +1,39 @@
-name: ALAMID_STRIKE_FORCE
+name: ALAMID_FORCE_2026
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # هذا السطر هو اللي بيطلع لك زر التشغيل اليدوي
   schedule:
     - cron: '0 5 * * *'
 
 jobs:
-  operational_strike:
+  strike_operation:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: 1. جلب الكود
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: 2. تجهيز البايثون
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Install Dependencies
-        run: pip install requests
+      - name: 3. تثبيت المكتبات
+        run: |
+          pip install requests
+          # التأكد من وجود ملف الإيميلات إذا كان محذوفاً
+          if [ ! -f emails.txt ]; then touch emails.txt; fi
 
-      - name: Run System
+      - name: 4. انطلاق النظام
         env:
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
         run: |
           python scraper.py
           python striker.py
 
-      - name: Save Results
+      - name: 5. حفظ النتائج
         run: |
           git config --global user.name "Alamid-Bot"
           git config --global user.email "bot@alamid.com"
           git add emails.txt
-          git commit -m "Update: New leads" || echo "No changes"
+          git commit -m "Update: Leads acquired" || echo "No changes to commit"
           git push
