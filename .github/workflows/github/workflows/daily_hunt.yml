@@ -27,4 +27,13 @@ jobs:
       - name: Run Telegram Bot
         env:
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
-        run: python ALAMID_STRIKE_FORCE.py
+        run: |
+          # فحص إذا كان الملف ينتهي بـ .py أو لا وتشغيله
+          if [ -f "ALAMID_STRIKE_FORCE.py" ]; then
+            python ALAMID_STRIKE_FORCE.py
+          elif [ -f "ALAMID_STRIKE_FORCE" ]; then
+            python ALAMID_STRIKE_FORCE
+          else
+            print "❌ لم يتم العثور على ملف البوت بأي صيغة!"
+            exit 1
+          fi
