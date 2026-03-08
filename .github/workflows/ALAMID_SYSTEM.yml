@@ -1,0 +1,36 @@
+name: ALAMID_POWER_2026
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+  run_alamid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 جلب ملفات المشروع
+        uses: actions/checkout@v3
+
+      - name: 🐍 إعداد البايثون
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 📦 تثبيت المكتبات
+        run: pip install requests
+
+      - name: ⚡ تشغيل المنظومة (صيد وإرسال)
+        env:
+          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
+        run: |
+          python scraper.py
+          python striker.py
+
+      - name: 💾 حفظ النتائج في emails.txt
+        run: |
+          git config --global user.name "Alamid-Bot"
+          git config --global user.email "bot@alamid.com"
+          git add emails.txt
+          git commit -m "Update: New targets acquired ⚖️" || echo "No changes"
+          git push
