@@ -1,57 +1,42 @@
-import os
 import telebot
 import time
+from duckduckgo_search import DDGS
 
-# --- سحب التوكن من الـ Secrets ---
-# تأكد أن اسم المفتاح في GitHub هو MS_APP_PASS
-TOKEN = os.getenv("MS_APP_PASS")
+# --- ضع توكن تليجرام حقك هنا مباشرة (بين علامتي التنصيص) ---
+TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
 
-# إعداد البوت
-if TOKEN:
-    bot = telebot.TeleBot(TOKEN)
-    print("✅ تم ربط المحرك المليوني بنجاح!")
-else:
-    print("❌ خطأ: لم يتم العثور على توكن تليجرام في الـ Secrets")
+# التحقق من وجود التوكن لتجنب الخطأ القاتل
+if not TOKEN or "هنا_" in TOKEN:
+    print("❌ خطأ: لم تضع التوكن داخل الكود! يرجى وضعه ليعمل البوت.")
+    exit()
 
-# --- محرك الاستقطاب المليوني ---
-STRIKE_FORCE_PROMPT = """
-🚀 [منصة العميد]: إطلاق محرك الاستقطاب المليوني...
-📊 وضع القوة: استهداف عملاء النخبة الآن.
-⚖️ الحالة: جاهز لسرد وتحليل القضايا الكبرى.
-"""
+bot = telebot.TeleBot(TOKEN)
 
-def start_striker():
-    print(">>> 🚀 انطلاق منصة العميد... جاري فحص المحركات")
-    print(">>> ✅ المحركات تعمل بكفاءة عالية (بدون مفاتيح خارجية)")
-    print(STRIKE_FORCE_PROMPT)
+# دالة الذكاء الاصطناعي (مجانية وبدون مفتاح قوقل)
+def get_ai_answer(text):
+    try:
+        with DDGS() as ddgs:
+            prompt = f"أنت المحامي العميد، خبير قانوني سعودي 2026. حلل هذه القضية بسرد فخم وثقة: {text}"
+            return ddgs.chat(prompt, model='gpt-4o-mini')
+    except:
+        return "⏳ المستشار مشغول بمراجعة الأنظمة، حاول ثانية."
 
-@bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    welcome_text = (
-        "⚖️ **مرحباً بك في منصة العميد الذكية** ⚖️\n\n"
-        "لقد دخلت الآن في نطاق المستشار القانوني الأول في السعودية لعام 2026.\n\n"
-        "🔹 **سرد قانوني دقيق**\n"
-        "🔹 **تحليل ثغرات ناجز**\n"
-        "🔹 **حلول قضائية فورية**\n\n"
-        "أرسل تفاصيل قضيتك الآن دعنا نبدأ التحليل..."
-    )
-    bot.reply_to(message, welcome_text, parse_mode='Markdown')
+# الأوامر
+@bot.message_handler(commands=['start'])
+def welcome(message):
+    bot.reply_to(message, "⚖️ أهلاً بك في منصة العميد.\nبوتي يعمل الآن بنجاح، أرسل قضيتك لتحليلها.")
 
-# وظيفة لاستقبال القضايا وتحويلها للتحليل
-@bot.message_handler(func=lambda message: True)
-def collect_cases(message):
-    # هنا يتم استلام القضية وإظهار هيبة البوت قبل التحليل
-    print(f"📥 قضية جديدة من العميل: {message.from_user.first_name}")
-    bot.reply_to(message, "⏳ جاري فحص وقائع قضيتك في الأنظمة السعودية... فضلاً انتظر ثواني.")
-    
-    # ملاحظة: الكود هنا سيتكامل مع ALAMID_STRIKE_FORCE لتحليل الرد
-    # للتبسيط، الكود الحالي يؤكد استلام القضية بنجاح
+@bot.message_handler(func=lambda m: True)
+def handle_all(message):
+    wait = bot.reply_to(message, "⏳ جاري السرد والتحليل القانوني...")
+    answer = get_ai_answer(message.text)
+    bot.edit_message_text(answer, message.chat.id, wait.message_id)
 
+# تشغيل نهائي ومستمر
 if __name__ == "__main__":
-    start_striker()
+    print("🚀 [منصة العميد]: المحرك يعمل الآن غصب عن الظروف!")
     while True:
         try:
             bot.polling(none_stop=True, interval=0, timeout=20)
-        except Exception as e:
-            print(f"⚠️ إعادة تشغيل المحرك: {e}")
+        except Exception:
             time.sleep(5)
