@@ -1,39 +1,34 @@
-name: Alamid Final System
+name: Alamid Final Strike 2026
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  run-alamid:
+  run-system:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Python Setup
+      - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.9'
 
-      - name: Install Dependencies
+      - name: Install Libs
         run: pip install pyTelegramBotAPI
 
-      - name: Run Scraper & Striker
+      - name: تشغيل الرادار والمهاجم
+        env:
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }} # ربط السيكرت بالكود
         run: |
           python scraper.py
           python striker.py
 
-      - name: Run Al-Amid Bot
+      - name: تشغيل مكتب العميد (البوت)
         env:
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
         run: |
-          # هذا السطر يبحث عن أي ملف يبدأ بكلمة ALAMID ويشغله فوراً
-          FILE=$(ls ALAMID* | head -n 1)
-          if [ -z "$FILE" ]; then
-            echo "❌ لم يتم العثور على ملف البوت!"
-            exit 1
-          else
-            echo "✅ جاري تشغيل الملف: $FILE"
-            python "$FILE"
-          fi
+          # يشغل أي ملف يبدأ بـ ALAMID
+          python ALAMID*.py
