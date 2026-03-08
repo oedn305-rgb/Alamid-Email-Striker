@@ -5,14 +5,15 @@ import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# --- إعدادات Mailjet ---
+# --- إعدادات Mailjet (الجديدة) ---
 SMTP_SERVER = "in-v3.mailjet.com"
 SMTP_PORT = 587
 
-# سحب المفاتيح من السيكرتس (نفس الأسماء اللي صورتها لي)
+# سحب المفاتيح الجديدة فقط
 API_KEY = os.getenv("MAILJET_API_KEY") 
 SECRET_KEY = os.getenv("MAILJET_SECRET_KEY")
 
+# إيميلك المعتمد
 SENDER_EMAIL = "Alamid.Systems.2026@outlook.com"
 
 def send_lawyer_email(target_email):
@@ -22,7 +23,7 @@ def send_lawyer_email(target_email):
         msg['To'] = target_email
         msg['Subject'] = "⚠️ تنبيه نظامي: هل أعمالكم محمية من ثغرات 2026؟"
 
-        body = f"""
+        body = """
 مرحباً بك،
 
 عالم الأنظمة السعودية يتطور بسرعة، ومنصة "العميد" تمنحك القوة القانونية عبر الذكاء الاصطناعي.
@@ -37,6 +38,7 @@ https://t.me/Alamid_Bot
 
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
+        # هنا نستخدم المفاتيح الجديدة (API_KEY و SECRET_KEY)
         server.login(API_KEY, SECRET_KEY) 
         server.send_message(msg)
         server.quit()
@@ -46,9 +48,9 @@ https://t.me/Alamid_Bot
         return False
 
 def run_campaign():
-    # التأكد من وصول المفاتيح للكود
+    # التحقق من مفاتيح Mailjet حصراً
     if not API_KEY or not SECRET_KEY:
-        print("❌ خطأ: مفاتيح Mailjet غير موجودة في الـ Secrets!")
+        print("❌ خطأ: مفاتيح Mailjet (API_KEY/SECRET_KEY) غير موجودة في الـ Secrets!")
         return
 
     if not os.path.exists("emails.txt"):
@@ -62,14 +64,13 @@ def run_campaign():
         print("⚠️ قائمة الإيميلات فارغة!")
         return
 
-    target_list = emails[:100]
-    print(f"🚀 [منصة العميد]: انطلاق الحملة.. المستهدف {len(target_list)} جهة.")
+    print(f"🚀 [منصة العميد]: انطلاق الحملة.. المستهدف {len(emails[:100])} جهة.")
 
-    for index, email in enumerate(target_list):
+    for index, email in enumerate(emails[:100]):
         if send_lawyer_email(email):
             print(f"✅ [{index+1}/100] تم الإرسال بنجاح: {email}")
         
-        if index < len(target_list) - 1:
+        if index < len(emails[:100]) - 1:
             wait_time = random.randint(60, 90)
             print(f"⏳ انتظار {wait_time} ثانية للأمان...")
             time.sleep(wait_time)
