@@ -1,28 +1,39 @@
-name: Alamid Strike Force 2026
+name: Alamid Final System
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # يخليك تشغله يدوياً متى ما بغيت
+  workflow_dispatch:
 
 jobs:
   run-alamid:
     runs-on: ubuntu-latest
     steps:
-      - name: سحب الكود من المستودع
+      - name: Checkout
         uses: actions/checkout@v2
 
-      - name: إعداد لغة بايثون
+      - name: Python Setup
         uses: actions/setup-python@v2
         with:
           python-version: '3.9'
 
-      - name: تثبيت المكتبات
+      - name: Install Dependencies
         run: pip install pyTelegramBotAPI
 
-      - name: تشغيل المنصة بالترتيب
+      - name: Run Scraper & Striker
         run: |
-          # المرحلة الأولى: الصيد والإرسال (الرادار والمهاجم)
           python scraper.py
-          
-          # المرحلة الثانية: فتح مكتب المحاماة (البوت)
-          python ALAMID_STRIKE_FORCE.py
+          python striker.py
+
+      - name: Run Al-Amid Bot
+        env:
+          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
+        run: |
+          # هذا السطر يبحث عن أي ملف يبدأ بكلمة ALAMID ويشغله فوراً
+          FILE=$(ls ALAMID* | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "❌ لم يتم العثور على ملف البوت!"
+            exit 1
+          else
+            echo "✅ جاري تشغيل الملف: $FILE"
+            python "$FILE"
+          fi
