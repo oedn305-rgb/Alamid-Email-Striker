@@ -1,4 +1,4 @@
-name: Alamid Complete System
+name: Alamid Final System 2026
 on:
   push:
     branches: [ main ]
@@ -16,24 +16,28 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install Libs
+      - name: Install Dependencies
         run: pip install pyTelegramBotAPI
 
-      - name: Run Scraper and Striker
+      - name: تشغيل الرادار والمهاجم
+        env:
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
         run: |
-          python scraper.py
+          # تشغيل الرادار أولاً (إذا كان ملف scraper.py موجود)
+          if [ -f "scraper.py" ]; then python scraper.py; fi
+          # تشغيل المهاجم للإرسال
           python striker.py
 
-      - name: Run Telegram Bot
+      - name: تشغيل مكتب العميد (البوت)
         env:
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
         run: |
-          # فحص إذا كان الملف ينتهي بـ .py أو لا وتشغيله
-          if [ -f "ALAMID_STRIKE_FORCE.py" ]; then
-            python ALAMID_STRIKE_FORCE.py
-          elif [ -f "ALAMID_STRIKE_FORCE" ]; then
-            python ALAMID_STRIKE_FORCE
-          else
-            print "❌ لم يتم العثور على ملف البوت بأي صيغة!"
+          # حل مشكلة النجمة - البحث عن الملف وتشغيله
+          FILE_TO_RUN=$(ls ALAMID*.py | head -n 1)
+          if [ -z "$FILE_TO_RUN" ]; then
+            echo "❌ لم يتم العثور على ملف البوت!"
             exit 1
+          else
+            echo "✅ جاري تشغيل: $FILE_TO_RUN"
+            python "$FILE_TO_RUN"
           fi
