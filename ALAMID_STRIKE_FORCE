@@ -2,27 +2,34 @@ import os
 import telebot
 import time
 
-# سحب التوكن من الـ Secrets (تأكد إنه باسم MS_APP_PASS في GitHub)
+# سحب التوكن من الـ Secrets (تأكد أن الاسم في قوقل هو MS_APP_PASS)
 TOKEN = os.getenv("MS_APP_PASS")
 
 if not TOKEN:
-    print("❌ خطأ: توكن تليجرام MS_APP_PASS غير موجود!")
-    exit()
+    print("❌ خطأ: لم يتم العثور على توكن تليجرام (MS_APP_PASS) في الـ Secrets!")
+    # وضعنا توكن وهمي هنا فقط لمنع الكود من الانهيار إذا لم يجد السيكرت
+    TOKEN = "0000000000:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def welcome(message):
-    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد.\nتم الانتهاء من استقطاب العملاء، والمكتب مفتوح الآن لاستفساراتك.")
+    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد.\nالمكتب مفتوح الآن وجاهز لتحليل قضاياك.")
 
 @bot.message_handler(func=lambda m: True)
-def handle_case(message):
-    bot.reply_to(message, f"⏳ جاري تحليل قضيتك: ({message.text})\nبناءً على الأنظمة السعودية لعام 2026، يتم استخراج الثغرات الآن...")
+def handle_msg(message):
+    # سرد قانوني بسيط للتأكد من العمل
+    bot.reply_to(message, f"⏳ استلمت قضيتك: ({message.text})\nجاري البحث في الأنظمة السعودية لعام 2026...")
 
 if __name__ == "__main__":
-    print("🚀 [منصة العميد]: بوت المكتب شغال الآن...")
+    if TOKEN.startswith("0000"):
+        print("⚠️ تنبيه: البوت يعمل بوضع التجربة لأن التوكن مفقود.")
+    else:
+        print("🚀 [منصة العميد]: المحرك يعمل بنجاح!")
+    
     while True:
         try:
             bot.polling(none_stop=True)
-        except Exception:
+        except Exception as e:
+            print(f"🔄 إعادة تشغيل بسبب: {e}")
             time.sleep(5)
