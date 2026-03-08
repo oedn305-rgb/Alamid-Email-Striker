@@ -1,1 +1,46 @@
+import requests
+import re
+import time
 
+# --- الكلمات المفتاحية للبحث (الذهب) ---
+SEARCH_QUERIES = [
+    '"@gmail.com" محاماة السعودية',
+    '"@outlook.com" عقارات الرياض',
+    '"@hotmail.com" مدير شركة السعودية',
+    'site:linkedin.com "CEO" السعودية "@gmail.com"'
+]
+
+def scout_new_emails():
+    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    new_emails = set()
+
+    print("📡 بدأ الرادار اليومي في مسح الشبكة...")
+
+    for query in SEARCH_QUERIES:
+        # البحث عبر محرك بحث (محاكاة)
+        # ملاحظة: الشركات الكبرى تستخدم APIs مثل SerpApi لجلب النتائج بدقة
+        search_url = f"https://www.google.com/search?q={query}"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        
+        try:
+            response = requests.get(search_url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                found = re.findall(email_pattern, response.text)
+                for email in found:
+                    # تصفية الإيميلات لضمان الجودة
+                    if not any(x in email.lower() for x in ['example', 'test', 'png', 'jpg']):
+                        new_emails.add(email.lower())
+            time.sleep(2) # تجنب الحظر من محرك البحث
+        except:
+            continue
+
+    if new_emails:
+        with open("emails.txt", "a") as f:
+            for email in new_emails:
+                f.write(email + "\n")
+        print(f"✅ تم إضافة {len(new_emails)} عميل محتمل جديد لليوم.")
+    else:
+        print("⚠️ لم يتم العثور على أهداف جديدة في هذه الجولة.")
+
+if __name__ == "__main__":
+    scout_new_emails()
