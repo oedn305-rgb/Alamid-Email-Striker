@@ -1,7 +1,7 @@
 name: Send Marketing Emails
 
 on:
-  workflow_dispatch: # هذا الزر اللي بتضغط عليه للتشغيل اليدوي
+  workflow_dispatch: # للتشغيل اليدوي
 
 jobs:
   build:
@@ -15,14 +15,11 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
       - name: Run Striker
         env:
-          # ربط السيكرتس اللي أضفتها بالأسماء الصحيحة
+          # نمرر المفاتيح من السيكرتس مباشرة للكود
           MAILJET_API_KEY: ${{ secrets.MAILJET_API_KEY }}
           MAILJET_SECRET_KEY: ${{ secrets.MAILJET_SECRET_KEY }}
-        run: python striker.py
+        run: |
+          # أمر التشغيل مع إظهار النتائج فوراً
+          python -u striker.py
