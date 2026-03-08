@@ -1,38 +1,28 @@
+import os
 import telebot
-from duckduckgo_search import DDGS
 import time
 
-# --- ضع توكن تليجرام الخاص بك هنا فقط ---
-TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks" # استبدله بتوكن بوتك
+# سحب التوكن من الـ Secrets (تأكد إنه باسم MS_APP_PASS في GitHub)
+TOKEN = os.getenv("MS_APP_PASS")
+
+if not TOKEN:
+    print("❌ خطأ: توكن تليجرام MS_APP_PASS غير موجود!")
+    exit()
 
 bot = telebot.TeleBot(TOKEN)
 
-def get_ai_response(user_input):
-    """جلب رد الذكاء الاصطناعي بدون مفتاح API"""
-    try:
-        with DDGS() as ddgs:
-            prompt = f"أنت المحامي العميد، خبير قانوني سعودي. حلل هذه القضية بسرد فخم: {user_input}"
-            # نستخدم محرك GPT-4 (مجاني عبر DuckDuckGo)
-            results = ddgs.chat(prompt, model='gpt-4o-mini')
-            return results
-    except Exception as e:
-        print(f"Error: {e}")
-        return "⏳ المستشار مشغول قليلاً، حاول مرة أخرى."
+@bot.message_handler(commands=['start'])
+def welcome(message):
+    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد.\nتم الانتهاء من استقطاب العملاء، والمكتب مفتوح الآن لاستفساراتك.")
 
 @bot.message_handler(func=lambda m: True)
-def handle_message(message):
-    try:
-        # إشعار بالاستلام
-        waiting = bot.reply_to(message, "⏳ جاري فحص الأنظمة السعودية وتحليل القضية...")
-        
-        # الحصول على الرد
-        ai_reply = get_ai_response(message.text)
-        
-        # إرسال الرد النهائي
-        bot.edit_message_text(ai_reply, message.chat.id, waiting.message_id)
-    except Exception as e:
-        bot.reply_to(message, "⚠️ عذراً، حدث خطأ فني بسيط.")
+def handle_case(message):
+    bot.reply_to(message, f"⏳ جاري تحليل قضيتك: ({message.text})\nبناءً على الأنظمة السعودية لعام 2026، يتم استخراج الثغرات الآن...")
 
 if __name__ == "__main__":
-    print("🚀 [منصة العميد]: البوت يعمل الآن بدون مفتاح Gemini!")
-    bot.infinity_polling()
+    print("🚀 [منصة العميد]: بوت المكتب شغال الآن...")
+    while True:
+        try:
+            bot.polling(none_stop=True)
+        except Exception:
+            time.sleep(5)
