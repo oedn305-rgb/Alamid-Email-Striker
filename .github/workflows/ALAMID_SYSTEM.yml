@@ -1,36 +1,28 @@
-name: ALAMID_POWER_2026
+name: Send Marketing Emails
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 5 * * *'
+  workflow_dispatch: # هذا الزر اللي بتضغط عليه للتشغيل اليدوي
 
 jobs:
-  run_alamid:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 جلب ملفات المشروع
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: 🐍 إعداد البايثون
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
           python-version: '3.9'
 
-      - name: 📦 تثبيت المكتبات
-        run: pip install requests
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: ⚡ تشغيل المنظومة (صيد وإرسال)
+      - name: Run Striker
         env:
-          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
-        run: |
-          python scraper.py
-          python striker.py
-
-      - name: 💾 حفظ النتائج في emails.txt
-        run: |
-          git config --global user.name "Alamid-Bot"
-          git config --global user.email "bot@alamid.com"
-          git add emails.txt
-          git commit -m "Update: New targets acquired ⚖️" || echo "No changes"
-          git push
+          # ربط السيكرتس اللي أضفتها بالأسماء الصحيحة
+          MAILJET_API_KEY: ${{ secrets.MAILJET_API_KEY }}
+          MAILJET_SECRET_KEY: ${{ secrets.MAILJET_SECRET_KEY }}
+        run: python striker.py
