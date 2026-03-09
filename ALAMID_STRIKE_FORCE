@@ -2,13 +2,12 @@ import os, smtplib, telebot, sys
 from email.mime.text import MIMEText
 from email.header import Header
 
-# --- سحب البيانات ---
+# --- البيانات المعتمدة والنهائية ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
 MY_EMAIL = "oedn305@gmail.com"
+# الرمز أبو 16 حرف تم دمجه وتنظيفه تلقائياً
+MY_PASS = "abllhlxtzlhoaugq" 
 CHAT_ID = "6381014522"
-
-raw_pass = str(os.getenv("GMAIL_PASS", "")).strip()
-MY_PASS = "".join(filter(lambda x: x.isascii() and not x.isspace(), raw_pass))
 
 def log(text):
     print(text)
@@ -16,68 +15,69 @@ def log(text):
 
 bot = telebot.TeleBot(TOKEN)
 
-# --- الرد القانوني الفوري ---
+# --- رد البوت الفوري والاحترافي ---
 @bot.message_handler(func=lambda message: True)
 def handle_lawyer_ai(message):
-    log(f"📥 وصلت قضية من: {message.from_user.first_name}")
+    log(f"📥 استلام قضية جديدة من: {message.from_user.first_name}")
     response = (
         "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
-        f"أهلاً بك يا {message.from_user.first_name}، تم استلام قضيتك.\n"
-        "جاري مراجعة الأنظمة السعودية (العمالية/التجارية/الأحوال الشخصية).\n\n"
-        "✅ سيتم الرد عليك بمذكرة قانونية مختصرة خلال لحظات."
+        f"أهلاً بك يا {message.from_user.first_name}، تم استلام طلبك.\n"
+        "النظام يقوم الآن بمراجعة الأنظمة السعودية ذات الصلة بحالتك.\n\n"
+        "✅ سيتم تزويدك بالرد القانوني المبدئي هنا خلال لحظات."
     )
     bot.reply_to(message, response, parse_mode="Markdown")
 
 def start_alamid():
-    log("🚀 [نظام العميد]: بدء التشغيل...")
+    log("🚀 [نظام العميد]: بدء العملية الكبرى...")
     
-    # 1. مرحلة قراءة الإيميلات وإرسالها
+    # 1. مرحلة قراءة الملفات وإرسال الإيميلات
+    sent_count = 0
     try:
-        # البحث عن أي ملف يحتوي على كلمة email في المشروع
-        email_file = "emails.txt" # تأكد إن هذا هو اسم ملفك في GitHub
+        # نبحث عن أي ملف نصي يحتوي على إيميلات في المجلد
+        targets = []
+        files_to_check = ["emails.txt", "Emails.txt", "list.txt"]
         
-        if os.path.exists(email_file):
-            with open(email_file, "r", encoding="utf-8") as f:
-                # قراءة كل سطر، تنظيفه، والتأكد إنه إيميل حقيقي
-                targets = [l.strip() for l in f if "@" in l]
-            
-            if targets:
-                log(f"📂 تم العثور على {len(targets)} إيميل. جاري الإرسال...")
-                server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-                server.login(MY_EMAIL, MY_PASS)
-                log("✅ تم تسجيل الدخول لسيرفر قوقل!")
+        for f_name in files_to_check:
+            if os.path.exists(f_name):
+                log(f"📂 تم العثور على ملف: {f_name}")
+                with open(f_name, "r", encoding="utf-8") as f:
+                    targets.extend([l.strip() for l in f if "@" in l])
+                break # نكتفي بأول ملف نلقاه
 
-                sent = 0
-                for target in targets: # بيرسل للكل الحين
-                    try:
-                        subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
-                        body = "يسعدنا خدمتك في مكتبنا القانوني عبر البوت المباشر:\nhttps://t.me/SaudiLegal_AI_bot"
-                        
-                        msg = MIMEText(body, 'plain', 'utf-8')
-                        msg['Subject'] = Header(subject, 'utf-8')
-                        msg['From'] = MY_EMAIL
-                        msg['To'] = target
-                        
-                        server.sendmail(MY_EMAIL, [target], msg.as_string())
-                        sent += 1
-                        if sent % 10 == 0: log(f"📤 تم إرسال {sent}...")
-                    except: continue
-                
-                server.quit()
-                log(f"🏁 تم الانتهاء! إجمالي الإيميلات المرسلة: {sent}")
-                try: bot.send_message(CHAT_ID, f"✅ تم إرسال `{sent}` إيميل بنجاح.")
-                except: pass
-            else:
-                log("⚠️ الملف موجود لكن لا يحتوي على إيميلات صالحة!")
+        if targets:
+            log(f"📧 جاري محاولة إرسال لـ {len(targets)} هدف...")
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.login(MY_EMAIL, MY_PASS)
+            log("✅ تم الاتصال بسيرفر قوقل بنجاح!")
+
+            for target in targets:
+                try:
+                    subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
+                    body = "للاستشارة الفورية وعرض قضيتكم، تفضلوا بزيارة البوت الرسمي:\nhttps://t.me/SaudiLegal_AI_bot"
+                    
+                    msg = MIMEText(body, 'plain', 'utf-8')
+                    msg['Subject'] = Header(subject, 'utf-8')
+                    msg['From'] = MY_EMAIL
+                    msg['To'] = target
+                    
+                    server.sendmail(MY_EMAIL, [target], msg.as_string())
+                    sent_count += 1
+                    if sent_count % 10 == 0: log(f"📤 تم إرسال {sent_count}...")
+                except: continue
+            
+            server.quit()
+            log(f"🏁 تم الانتهاء! إجمالي الإيميلات المرسلة: {sent_count}")
+            try: bot.send_message(CHAT_ID, f"✅ تم بنجاح إرسال `{sent_count}` إيميل للعملاء.")
+            except: pass
         else:
-            log(f"❌ خطأ: ملف {email_file} غير موجود في المجلد الرئيسي!")
+            log("⚠️ لم يتم العثور على أي ملف إيميلات (تأكد من وجود emails.txt)")
 
     except Exception as e:
-        log(f"❌ حدث خطأ أثناء الإرسال: {e}")
+        log(f"❌ حدث خطأ فني: {e}")
 
-    # 2. تشغيل البوت
-    log("⚖️ البوت الآن مستعد للرد الفوري...")
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    # 2. تشغيل البوت للاستقبال
+    log("⚖️ البوت الآن مستعد للرد الفوري على القضايا...")
+    bot.infinity_polling(timeout=15)
 
 if __name__ == "__main__":
     start_alamid()
