@@ -1,18 +1,44 @@
-import os
-import telebot
-import time
+import os, telebot, smtplib, time
+from email.message import EmailMessage
 
+# 1. إعدادات النظام من السيكرتس
 TOKEN = os.getenv("MS_APP_PASS")
+MY_EMAIL = os.getenv("GMAIL_USER")
+MY_PASS = os.getenv("GMAIL_PASS")
+
 bot = telebot.TeleBot(TOKEN)
+bot.remove_webhook() # حل مشكلة Conflict 409 نهائياً
 
-# سطر سحري يحذف أي تعارض قديم
-bot.delete_webhook(drop_pending_updates=True)
-time.sleep(1)
+def send_strike():
+    if not MY_EMAIL or not MY_PASS:
+        return "❌ نقص في سيكرتس الإيميل!"
+    
+    try:
+        with open("emails.txt", "r") as f:
+            targets = [l.strip() for l in f.readlines() if "@" in l]
+        
+        counter = 0
+        for target in targets[:50]: # يرسل لأول 50 هدف كل تشغيلة
+            msg = EmailMessage()
+            msg.set_content("⚖️ مكتب العميد للاستشارات القانونية 2026 يرحب بك.")
+            msg['Subject'] = "عرض قانوني خاص"
+            msg['From'] = MY_EMAIL
+            msg['To'] = target
+            
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+                smtp.login(MY_EMAIL, MY_PASS)
+                smtp.send_message(msg)
+            counter += 1
+        return f"✅ تم استهداف {counter} عميل بنجاح من أصل 1158!"
+    except Exception as e:
+        return f"❌ فشل الإرسال: {e}"
 
-@bot.message_handler(commands=['start'])
-def welcome(message):
-    bot.reply_to(message, "⚖️ مكتب العميد 2026 متصل الآن..\nجاري العمل على الـ 1158 هدف.")
+@bot.message_handler(commands=['start', 'run'])
+def start(message):
+    bot.reply_to(message, "🚀 جاري إطلاق حملة الـ 1158 هدف...")
+    result = send_strike()
+    bot.send_message(message.chat.id, result)
 
 if __name__ == "__main__":
-    print("🚀 البوت انطلق...")
+    print("⚖️ منظومة العميد جاهزة...")
     bot.infinity_polling()
