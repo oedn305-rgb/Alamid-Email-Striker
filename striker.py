@@ -4,31 +4,26 @@ import time
 from email.message import EmailMessage
 
 def start_striker():
-    print("🚀 [المهاجم]: بدء الإرسال الفعلي لعملاء النخبة...")
+    MY_EMAIL = os.getenv("GMAIL_USER")
+    GMAIL_PASS = os.getenv("GMAIL_PASS")
 
-    # --- بياناتك اللي طلبتها ---
-    MY_EMAIL = "oedn305@gmail.com"  
-    GMAIL_PASS = os.getenv("GMAIL_PASS") # بيسحب الكود السري من Secrets
-
-    if not GMAIL_PASS:
-        print("❌ خطأ: لم يتم العثور على GMAIL_PASS في الـ Secrets!")
+    if not MY_EMAIL or not GMAIL_PASS:
+        print("❌ نقص في بيانات السيكرتس!")
         return
 
     if not os.path.exists("emails.txt"):
-        print("❌ لم أجد ملف emails.txt")
+        print("❌ ملف الأهداف غير موجود!")
         return
 
     with open("emails.txt", "r") as f:
         emails = [line.strip() for line in f.readlines() if "@" in line]
 
-    print(f"📂 تم العثور على {len(emails)} هدف. جاري استهداف أول 50...")
+    print(f"📡 جاري استهداف {len(emails[:50])} عميل...")
 
-    # الإرسال الفعلي
-    count = 0
     for target in emails[:50]:
         msg = EmailMessage()
-        msg.set_content(f"مرحباً بك في منصة العميد.\nنحن هنا لخدمتكم قانونياً وتقديم الاستشارات النوعية لعام 2026.\n\nللتواصل المباشر عبر تليجرام: t.me/ALAMID_STRIKE_BOT")
-        msg['Subject'] = "⚖️ عرض قانوني خاص من منصة العميد"
+        msg.set_content(f"منصة العميد ترحب بك.\nنحن هنا لخدمتكم قانونياً لعام 2026.\nللتواصل: t.me/اسم_بوتك")
+        msg['Subject'] = "⚖️ عرض قانوني خاص من العميد"
         msg['From'] = MY_EMAIL
         msg['To'] = target
 
@@ -36,13 +31,10 @@ def start_striker():
             with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
                 smtp.login(MY_EMAIL, GMAIL_PASS)
                 smtp.send_message(msg)
-            print(f"✅ تم الإرسال بنجاح إلى: {target}")
-            count += 1
-            time.sleep(1) # تأخير بسيط للأمان
+            print(f"✅ تم الإرسال إلى: {target}")
+            time.sleep(1)
         except Exception as e:
-            print(f"❌ فشل الإرسال إلى {target}: {e}")
-
-    print(f"🏁 المهمة انتهت! تم استقطاب {count} عملاء بنجاح.")
+            print(f"❌ فشل: {e}")
 
 if __name__ == "__main__":
     start_striker()
