@@ -1,4 +1,4 @@
-import os, smtplib, requests, telebot
+import os, smtplib, requests, telebot, threading
 
 # --- الإعدادات ---
 TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()
@@ -8,43 +8,47 @@ CHAT_ID = "6381014522"
 
 bot = telebot.TeleBot(TOKEN)
 
-# 1. تفعيل استقبال القضايا (الرد الآلي)
+# 1. عقل البوت (الرد على القضايا)
 @bot.message_handler(func=lambda message: True)
-def auto_reply(message):
-    print(f"📥 استلام قضية من {message.from_user.username}")
-    reply_text = (
+def handle_messages(message):
+    reply = (
         "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
-        "أهلاً بك يا استشهاد/مستشار. تم استلام تفاصيل قضيتك بنجاح.\n"
-        "يتم الآن فحص الأنظمة (العمالية/التجارية) ذات الصلة.\n\n"
-        "⏳ سيقوم أحد مستشارينا بالرد عليك خلال لحظات."
+        f"أهلاً بك يا {message.from_user.first_name}.\n"
+        "تم استلام قضيتك وجاري عرضها على المستشار المختص.\n\n"
+        "📩 سيصلك الرد هنا فوراً."
     )
-    bot.reply_to(message, reply_text, parse_mode="Markdown")
+    bot.reply_to(message, reply, parse_mode="Markdown")
 
-def run_system():
-    # حذف أي اتصال قديم وتفعيل البوت
-    bot.remove_webhook()
-    print("🚀 بدء الهجوم وإيقاظ البوت...")
-    
+# 2. المهاجم (إرسال الإيميلات)
+def send_emails_task():
+    print("🚀 [1] جاري إرسال الإيميلات للـ 1158 هدف...")
     try:
-        # إرسال الإيميلات أولاً
         with open("emails.txt", "r", encoding="utf-8") as f:
-            targets = [l.strip() for l in f if "@" in l]
+            targets = [line.strip() for line in f if "@" in line]
         
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(MY_EMAIL, MY_PASS)
         
-        for target in targets[:100]:
-            msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: استشارة قانونية\n\nتفضل بالدخول: https://t.me/SaudiLegal_AI_bot"
+        count = 0
+        for target in targets[:100]: 
+            subject = "⚖️ استشارة قانونية عاجلة"
+            body = f"مكتب المستشار السعودي يرحب بكم. للاستشارة المباشرة: https://t.me/SaudiLegal_AI_bot"
+            msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n{body}"
             server.sendmail(MY_EMAIL, target, msg.encode('utf-8'))
+            count += 1
+            if count % 10 == 0: print(f"✅ تم إرسال {count} إيميل...")
+            
         server.quit()
-        
-        # أهم خطوة: تشغيل البوت في وضع الاستماع المستمر
-        print("✅ الإيميلات طارت.. البوت الآن يسمع القضايا...")
-        bot.send_message(CHAT_ID, "🚀 نظام العميد 2026 متصل الآن ويستقبل القضايا.")
-        bot.infinity_polling(timeout=10, long_polling_timeout=5)
-        
+        print(f"🏁 تم الانتهاء من إرسال {count} إيميل بنجاح.")
+        bot.send_message(CHAT_ID, f"✅ تم إرسال {count} إيميل بنجاح والنظام الآن مستعد لاستقبال القضايا.")
     except Exception as e:
-        print(f"❌ خطأ: {e}")
+        print(f"❌ خطأ في الإرسال: {e}")
 
 if __name__ == "__main__":
-    run_system()
+    # تشغيل الإيميلات في خلفية النظام عشان ما تعطل البوت
+    email_thread = threading.Thread(target=send_emails_task)
+    email_thread.start()
+    
+    # تشغيل البوت فوراً لاستقبال الرسايل
+    print("⚖️ البوت الآن صاحي ويسمعك في تليجرام...")
+    bot.infinity_polling(timeout=20, long_polling_timeout=10)
