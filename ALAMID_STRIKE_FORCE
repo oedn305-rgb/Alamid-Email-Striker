@@ -1,35 +1,43 @@
-import os
-import telebot
-import time
+name: Alamid Final Strike 2026
 
-# سحب التوكن من الـ Secrets (تأكد أن الاسم في قوقل هو MS_APP_PASS)
-TOKEN = os.getenv("MS_APP_PASS")
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * *'
 
-if not TOKEN:
-    print("❌ خطأ: لم يتم العثور على توكن تليجرام (MS_APP_PASS) في الـ Secrets!")
-    # وضعنا توكن وهمي هنا فقط لمنع الكود من الانهيار إذا لم يجد السيكرت
-    TOKEN = "0000000000:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+jobs:
+  run-alamid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
-bot = telebot.TeleBot(TOKEN)
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
 
-@bot.message_handler(commands=['start'])
-def welcome(message):
-    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد.\nالمكتب مفتوح الآن وجاهز لتحليل قضاياك.")
+      - name: Install Libs
+        run: pip install pyTelegramBotAPI requests
 
-@bot.message_handler(func=lambda m: True)
-def handle_msg(message):
-    # سرد قانوني بسيط للتأكد من العمل
-    bot.reply_to(message, f"⏳ استلمت قضيتك: ({message.text})\nجاري البحث في الأنظمة السعودية لعام 2026...")
+      - name: تشغيل الإرسال
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+        run: |
+          if [ -f "scraper.py" ]; then python scraper.py; fi
+          if [ -f "striker.py" ]; then python striker.py; fi
 
-if __name__ == "__main__":
-    if TOKEN.startswith("0000"):
-        print("⚠️ تنبيه: البوت يعمل بوضع التجربة لأن التوكن مفقود.")
-    else:
-        print("🚀 [منصة العميد]: المحرك يعمل بنجاح!")
-    
-    while True:
-        try:
-            bot.polling(none_stop=True)
-        except Exception as e:
-            print(f"🔄 إعادة تشغيل بسبب: {e}")
-            time.sleep(5)
+      - name: تشغيل البوت
+        env:
+          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
+        run: |
+          FILE=$(ls ALAMID*.py | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "❌ لم يتم العثور على ملف البوت!"
+            exit 1
+          else
+            python "$FILE"
+          fi
