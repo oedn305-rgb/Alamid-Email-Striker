@@ -1,31 +1,18 @@
-name: Alamid Final Strike 2026
-
+name: ALAMID_2026_FINAL
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
-
 jobs:
-  run-system:
+  run:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-
-      - name: Install Libs
-        run: pip install pyTelegramBotAPI requests
-
-      - name: إطلاق المنظومة
+      - run: pip install pyTelegramBotAPI
+      - name: Launch
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
-        run: |
-          python scraper.py
-          python striker.py
-          python ALAMID_STRIKE_FORCE
+        run: python ALAMID_STRIKE_FORCE
