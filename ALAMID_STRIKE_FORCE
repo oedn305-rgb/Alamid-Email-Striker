@@ -1,4 +1,4 @@
-import os, smtplib, requests, telebot, time
+import os, smtplib, requests, telebot
 
 # --- الإعدادات ---
 TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()
@@ -8,21 +8,25 @@ CHAT_ID = "6381014522"
 
 bot = telebot.TeleBot(TOKEN)
 
-# 1. وظيفة استقبال القضايا والرد عليها
+# 1. تفعيل استقبال القضايا (الرد الآلي)
 @bot.message_handler(func=lambda message: True)
-def handle_all_messages(message):
-    print(f"📥 وصلت قضية جديدة من: {message.from_user.first_name}")
-    response = (
-        "⚖️ *تم استلام قضيتك بنجاح لدى مكتب المستشار القانوني السعودي*\n\n"
-        "جاري تحليل التفاصيل من قبل فريقنا المختص. سنقوم بالرد عليك خلال دقائق.\n\n"
-        "📞 *للطوارئ القانونية:* يمكنك الرد بكلمة 'اتصال'."
+def auto_reply(message):
+    print(f"📥 استلام قضية من {message.from_user.username}")
+    reply_text = (
+        "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
+        "أهلاً بك يا استشهاد/مستشار. تم استلام تفاصيل قضيتك بنجاح.\n"
+        "يتم الآن فحص الأنظمة (العمالية/التجارية) ذات الصلة.\n\n"
+        "⏳ سيقوم أحد مستشارينا بالرد عليك خلال لحظات."
     )
-    bot.reply_to(message, response, parse_mode="Markdown")
+    bot.reply_to(message, reply_text, parse_mode="Markdown")
 
-# 2. وظيفة إرسال الإيميلات (المهاجم)
-def send_emails():
-    print("🚀 بدء حملة الإيميلات...")
+def run_system():
+    # حذف أي اتصال قديم وتفعيل البوت
+    bot.remove_webhook()
+    print("🚀 بدء الهجوم وإيقاظ البوت...")
+    
     try:
+        # إرسال الإيميلات أولاً
         with open("emails.txt", "r", encoding="utf-8") as f:
             targets = [l.strip() for l in f if "@" in l]
         
@@ -30,19 +34,17 @@ def send_emails():
         server.login(MY_EMAIL, MY_PASS)
         
         for target in targets[:100]:
-            subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
-            body = f"مرحباً، للاستشارة الفورية ادخل هنا: https://t.me/SaudiLegal_AI_bot"
-            msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n{body}"
+            msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: استشارة قانونية\n\nتفضل بالدخول: https://t.me/SaudiLegal_AI_bot"
             server.sendmail(MY_EMAIL, target, msg.encode('utf-8'))
         server.quit()
-        return len(targets[:100])
-    except: return 0
+        
+        # أهم خطوة: تشغيل البوت في وضع الاستماع المستمر
+        print("✅ الإيميلات طارت.. البوت الآن يسمع القضايا...")
+        bot.send_message(CHAT_ID, "🚀 نظام العميد 2026 متصل الآن ويستقبل القضايا.")
+        bot.infinity_polling(timeout=10, long_polling_timeout=5)
+        
+    except Exception as e:
+        print(f"❌ خطأ: {e}")
 
 if __name__ == "__main__":
-    # أولاً: يرسل الإيميلات للناس
-    count = send_emails()
-    bot.send_message(CHAT_ID, f"✅ تم إرسال {count} إيميل. البوت الآن متصل ويستقبل القضايا..")
-    
-    # ثانياً: يفتح البوت "استقبال" وما يقفل (Polling)
-    print("⚖️ البوت الآن مستيقظ ويسمع القضايا...")
-    bot.infinity_polling()
+    run_system()
