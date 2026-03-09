@@ -1,24 +1,58 @@
+import requests
+import re
+import time
+import random
 import os
 
-def run_radar():
-    """ينظف ملف emails.txt من التكرارات ويتأكد من صحة الإيميلات"""
-    file_path = "emails.txt"
+EMAIL_FILE = "emails.txt"
 
-    if os.path.exists(file_path):
-        with open(file_path, "r") as f:
-            lines = f.readlines()
+def scout_for_leads():
+    """جمع الإيميلات من محركات البحث"""
+    search_queries = [
+        'site:sa "law" "@gmail.com"',
+        'site:sa "محاماة" "@outlook.com"',
+        'site:linkedin.com/in/ "CEO" "Saudi Arabia" "@gmail.com"',
+        'site:linkedin.com/in/ "مدير" "السعودية" "@outlook.com"',
+        'site:twitter.com "محامي" "السعودية" "@gmail.com"',
+        'site:sa "عقارات" "@hotmail.com"',
+        'site:sa "شركة" "الرياض" "@gmail.com"'
+    ]
 
-        # تنظيف: إزالة الفراغات، التأكد من وجود @، وإزالة التكرارات
-        clean_lines = sorted(set(line.strip() for line in lines if "@" in line))
+    found_emails = set()
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    }
 
-        # إعادة كتابة الملف بالقائمة المنقحة
-        with open(file_path, "w") as f:
-            for email in clean_lines:
+    print("📡 بدأ جمع الإيميلات...")
+
+    for query in search_queries:
+        try:
+            url = f"https://www.google.com/search?q={query}"
+            response = requests.get(url, headers=headers, timeout=15)
+            emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', response.text)
+            for email in emails:
+                if not email.lower().endswith(('png','jpg','jpeg','gif','pdf','svg')):
+                    found_emails.add(email.lower())
+            print(f"🔍 تم فحص: {query} ... وجدنا {len(emails)} إيميل")
+            time.sleep(random.randint(5, 10))
+        except Exception as e:
+            print(f"⚠️ خطأ في البحث: {e}")
+            continue
+
+    # قراءة القوائم القديمة
+    existing_emails = set()
+    if os.path.exists(EMAIL_FILE):
+        with open(EMAIL_FILE, "r") as f:
+            existing_emails = set(line.strip().lower() for line in f)
+
+    new_emails = found_emails - existing_emails
+    if new_emails:
+        with open(EMAIL_FILE, "a") as f:
+            for email in new_emails:
                 f.write(email + "\n")
-
-        print(f"✅ الرادار جاهز. القائمة منقحة وتضم {len(clean_lines)} هدف.")
+        print(f"✅ تم صيد {len(new_emails)} إيميل جديد.")
     else:
-        print(f"⚠️ لم يتم العثور على الملف {file_path}. الرجاء التأكد من وجوده.")
+        print("🌑 لم يتم العثور على إيميلات جديدة.")
 
 if __name__ == "__main__":
-    run_radar()
+    scout_for_leads()
