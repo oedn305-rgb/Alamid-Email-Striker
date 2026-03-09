@@ -2,12 +2,13 @@ import os, smtplib, telebot, sys
 from email.mime.text import MIMEText
 from email.header import Header
 
-# --- البيانات المعتمدة والنهائية ---
+# --- البيانات ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
 MY_EMAIL = "oedn305@gmail.com"
-# الرمز أبو 16 حرف تم دمجه وتنظيفه تلقائياً
-MY_PASS = "abllhlxtzlhoaugq" 
 CHAT_ID = "6381014522"
+
+raw_pass = str(os.getenv("GMAIL_PASS", "")).strip()
+MY_PASS = "".join(filter(lambda x: x.isascii() and not x.isspace(), raw_pass))
 
 def log(text):
     print(text)
@@ -15,69 +16,60 @@ def log(text):
 
 bot = telebot.TeleBot(TOKEN)
 
-# --- رد البوت الفوري والاحترافي ---
-@bot.message_handler(func=lambda message: True)
-def handle_lawyer_ai(message):
-    log(f"📥 استلام قضية جديدة من: {message.from_user.first_name}")
-    response = (
-        "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
-        f"أهلاً بك يا {message.from_user.first_name}، تم استلام طلبك.\n"
-        "النظام يقوم الآن بمراجعة الأنظمة السعودية ذات الصلة بحالتك.\n\n"
-        "✅ سيتم تزويدك بالرد القانوني المبدئي هنا خلال لحظات."
-    )
-    bot.reply_to(message, response, parse_mode="Markdown")
-
 def start_alamid():
-    log("🚀 [نظام العميد]: بدء العملية الكبرى...")
-    
-    # 1. مرحلة قراءة الملفات وإرسال الإيميلات
+    log("🚀 [نظام العميد]: بدء عملية الإرسال المباشر...")
     sent_count = 0
+    
+    # 1. قراءة الملف
+    if not os.path.exists("emails.txt"):
+        log("❌ خطأ: ملف emails.txt غير موجود!")
+        return
+
+    with open("emails.txt", "r", encoding="utf-8") as f:
+        targets = [l.strip() for l in f if "@" in l]
+    
+    log(f"📂 تم تحميل {len(targets)} هدف. جاري الاتصال بقوقل...")
+
     try:
-        # نبحث عن أي ملف نصي يحتوي على إيميلات في المجلد
-        targets = []
-        files_to_check = ["emails.txt", "Emails.txt", "list.txt"]
+        # 2. فتح الاتصال مع قوقل
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(MY_EMAIL, MY_PASS)
+        log("✅ تم الاتصال بنجاح. جاري الإرسال الآن...")
+
+        for target in targets:
+            try:
+                subject = "⚖️ استشارة قانونية عاجلة - مكتب المستشار السعودي"
+                body = "مرحباً، للاستشارة القانونية الفورية تواصل معنا عبر البوت:\nhttps://t.me/SaudiLegal_AI_bot"
+                
+                msg = MIMEText(body, 'plain', 'utf-8')
+                msg['Subject'] = Header(subject, 'utf-8')
+                msg['From'] = MY_EMAIL
+                msg['To'] = target
+                
+                server.sendmail(MY_EMAIL, [target], msg.as_string())
+                sent_count += 1
+                
+                # طباعة فورية لكل إيميل يتم إرساله
+                log(f"📤 [{sent_count}] تم الإرسال إلى: {target}")
+                
+                # إشعار كل 50 إيميل في تليجرام
+                if sent_count % 50 == 0:
+                    bot.send_message(CHAT_ID, f"✅ تم إرسال {sent_count} إيميل حتى الآن...")
+                    
+            except Exception as e:
+                log(f"⚠️ فشل الإرسال لـ {target}: {e}")
+                continue
         
-        for f_name in files_to_check:
-            if os.path.exists(f_name):
-                log(f"📂 تم العثور على ملف: {f_name}")
-                with open(f_name, "r", encoding="utf-8") as f:
-                    targets.extend([l.strip() for l in f if "@" in l])
-                break # نكتفي بأول ملف نلقاه
-
-        if targets:
-            log(f"📧 جاري محاولة إرسال لـ {len(targets)} هدف...")
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-            server.login(MY_EMAIL, MY_PASS)
-            log("✅ تم الاتصال بسيرفر قوقل بنجاح!")
-
-            for target in targets:
-                try:
-                    subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
-                    body = "للاستشارة الفورية وعرض قضيتكم، تفضلوا بزيارة البوت الرسمي:\nhttps://t.me/SaudiLegal_AI_bot"
-                    
-                    msg = MIMEText(body, 'plain', 'utf-8')
-                    msg['Subject'] = Header(subject, 'utf-8')
-                    msg['From'] = MY_EMAIL
-                    msg['To'] = target
-                    
-                    server.sendmail(MY_EMAIL, [target], msg.as_string())
-                    sent_count += 1
-                    if sent_count % 10 == 0: log(f"📤 تم إرسال {sent_count}...")
-                except: continue
-            
-            server.quit()
-            log(f"🏁 تم الانتهاء! إجمالي الإيميلات المرسلة: {sent_count}")
-            try: bot.send_message(CHAT_ID, f"✅ تم بنجاح إرسال `{sent_count}` إيميل للعملاء.")
-            except: pass
-        else:
-            log("⚠️ لم يتم العثور على أي ملف إيميلات (تأكد من وجود emails.txt)")
+        server.quit()
+        log(f"🏁 العملية انتهت. إجمالي المرسل: {sent_count}")
+        bot.send_message(CHAT_ID, f"⚖️ تمت المهمة بنجاح!\nتم إرسال {sent_count} إيميل للعملاء.")
 
     except Exception as e:
-        log(f"❌ حدث خطأ فني: {e}")
+        log(f"❌ فشل النظام: {e}")
 
-    # 2. تشغيل البوت للاستقبال
-    log("⚖️ البوت الآن مستعد للرد الفوري على القضايا...")
-    bot.infinity_polling(timeout=15)
+    # 3. تشغيل البوت للاستقبال
+    log("⚖️ البوت الآن في وضع الاستقبال...")
+    bot.infinity_polling()
 
 if __name__ == "__main__":
     start_alamid()
