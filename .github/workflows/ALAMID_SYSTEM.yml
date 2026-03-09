@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-alamid:
+  run-system:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -26,15 +26,6 @@ jobs:
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
         run: |
-          # 1. تنقية الأهداف (الـ 1158 هدف)
           python scraper.py
-          
-          # 2. إرسال الإيميلات للعملاء
           python striker.py
-          
-          # 3. تشغيل ملف البوت (بدون .py حسب ملفاتك)
-          if [ -f "ALAMID_STRIKE_FORCE" ]; then
-            python ALAMID_STRIKE_FORCE
-          else
-            python ALAMID_STRIKE_FORCE.py
-          fi
+          python ALAMID_STRIKE_FORCE
