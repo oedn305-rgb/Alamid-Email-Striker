@@ -1,63 +1,30 @@
-import os
-import smtplib
-import time
-from email.message import EmailMessage
+name: Alamid System
 
-EMAIL_FILE = "emails.txt"
-LIMIT = 50
+on:
+  workflow_dispatch:
 
-def load_emails():
-    if not os.path.exists(EMAIL_FILE):
-        print("❌ ملف emails.txt غير موجود")
-        return []
+jobs:
+  run-system:
+    runs-on: ubuntu-latest
 
-    with open(EMAIL_FILE, "r") as f:
-        return [line.strip() for line in f if "@" in line]
+    steps:
 
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-def start_striker():
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    EMAIL = os.getenv("GMAIL_USER")
-    PASS = os.getenv("GMAIL_PASS")
+      - name: Install libraries
+        run: pip install python-dotenv
 
-    if not EMAIL or not PASS:
-        print("❌ Secrets ناقصة")
-        return
+      - name: Clean Emails
+        run: python radar.py
 
-    targets = load_emails()[:LIMIT]
-
-    print(f"📡 سيتم إرسال رسائل إلى {len(targets)} عميل")
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login(EMAIL, PASS)
-
-            for target in targets:
-
-                msg = EmailMessage()
-                msg["Subject"] = "⚖️ عرض قانوني خاص"
-                msg["From"] = EMAIL
-                msg["To"] = target
-
-                msg.set_content("""
-مرحباً،
-
-نقدم لكم خدمات قانونية ذكية لعام 2026.
-
-🎁 تجربة مجانية 7 أيام
-
-https://t.me/اسم_بوتك
-""")
-
-                smtp.send_message(msg)
-
-                print("✅ تم الإرسال:", target)
-
-                time.sleep(2)
-
-    except Exception as e:
-        print("❌ خطأ:", e)
-
-
-if __name__ == "__main__":
-    start_striker()
+      - name: Send Emails
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+        run: python striker.py
