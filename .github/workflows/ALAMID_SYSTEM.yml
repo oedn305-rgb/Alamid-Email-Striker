@@ -1,5 +1,6 @@
 name: Run Striker Bot
 
+# تشغيل الـ workflow عند الضغط اليدوي أو عند أي push على الفرع الرئيسي
 on:
   workflow_dispatch:
   push:
@@ -8,24 +9,29 @@ on:
 
 jobs:
   run-striker:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # استخدام أحدث نسخة Ubuntu
 
     steps:
-      - name: Checkout repo
+      # سحب نسخة المشروع من المستودع
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      # تثبيت بايثون بالإصدار المطلوب
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      # تثبيت المكتبات المطلوبة
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --upgrade pip && pip install -r requirements.txt
 
-      - name: Run striker script
+      # تشغيل سكريبت البوت مع تمرير الـ Secrets
+      - name: Run Striker Script
         env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}      # البريد الإلكتروني
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}      # كلمة المرور أو App Password
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}        # توكن البوت
+          CHAT_ID: ${{ secrets.CHAT_ID }}            # رقم المحادثة أو القناة
+          ICLOUD_API_KEY: ${{ secrets.ICLOUD_API_KEY }} # **مثال لإضافة مفتاح iCloud**
         run: python striker.py
