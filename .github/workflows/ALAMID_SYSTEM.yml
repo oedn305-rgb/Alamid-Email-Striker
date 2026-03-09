@@ -1,27 +1,27 @@
-name: ALAMID_STRIKE_2026
+name: Run Telegram Bot
+
 on:
-  workflow_dispatch: # هذا اللي يطلع لك الزر الأزرق
+  workflow_dispatch:
+  push:
 
 jobs:
-  run-system:
+  run-bot:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: "3.11"
 
-      - name: Install Libs
-        run: pip install pyTelegramBotAPI requests --quiet
+      - name: Install requirements
+        run: pip install -r requirements.txt
 
-      - name: Launch Strike
+      - name: Run bot
         env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
-        run: |
-          # تشغيل ملف البوت والمهاجم مباشرة
-          python ALAMID_STRIKE_FORCE
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python striker.py
