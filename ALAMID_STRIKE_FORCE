@@ -1,17 +1,20 @@
 import os, smtplib, requests
 
-# --- بياناتك المباشرة هنا (أدخلها بدقة) ---
-MY_EMAIL = "oedn305@gmail.com"  # إيميلك
-MY_PASS = "xxxx xxxx xxxx xxxx"    # كود الـ 16 حرف (App Password) من قوقل
-TOKEN = "xxxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxx"  # توكن البوت حقك
-CHAT_ID = "6381014522"             # آيدي حسابك في تليجرام
-# ---------------------------------------
+# 1. سحب البيانات من السيكرتس (تأكد أن الأسماء مطابقة لما في GitHub)
+TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()  # توكن البوت
+MY_EMAIL = "oedn305@gmail.com"                    # إيميلك ثابت
+MY_PASS = str(os.getenv("GMAIL_PASS", "")).strip() # كود الـ 16 حرف اللي سويته قبل 50 دقيقة
+CHAT_ID = "6381014522"                            # آيدي تليجرام الخاص بك
 
-def start_strike():
-    print(f"🚀 [نظام العميد 2026]: بدء الهجوم المباشر بالإيميل: {MY_EMAIL}")
+def final_strike():
+    print(f"🚀 [نظام العميد 2026]: بدء الهجوم باستخدام: {MY_EMAIL}")
+    
+    # فحص أمان للسيكرتس
+    if not MY_PASS:
+        return "❌ خطأ: السيكرت GMAIL_PASS فاضي في إعدادات GitHub!"
     
     try:
-        # التأكد من وجود ملف الأهداف
+        # قراءة الأهداف من الملف
         if not os.path.exists("emails.txt"):
             return "❌ خطأ: ملف emails.txt غير موجود!"
             
@@ -21,41 +24,39 @@ def start_strike():
         if not targets:
             return "❌ ملف الأهداف فارغ!"
 
-        # الاتصال المباشر بسيرفر قوقل
+        # الاتصال المباشر بسيرفر قوقل (الأقوى)
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(MY_EMAIL, MY_PASS)
         
         count = 0
-        # إرسال لأول 100 هدف في كل تشغيلة (عشان قوقل ما يحظرك)
         for target in targets[:100]: 
             try:
-                # صياغة الرسالة يدوياً (Raw) لضمان العمل 100%
+                # صياغة الرسالة "خام" لكسر أي خطأ في البيانات
                 subject = "استشارة قانونية - مكتب العميد"
-                body = "مكتب العميد يرحب بكم ويسعد بخدمتكم في عام 2026."
+                body = "مكتب العميد يرحب بكم ويسعد بخدمتكم."
                 
                 raw_msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n{body}"
                 
                 server.sendmail(MY_EMAIL, target, raw_msg.encode('utf-8'))
                 count += 1
-                print(f"✅ [{count}] تم الإرسال بنجاح إلى: {target}")
-            except Exception as e:
-                print(f"⚠️ تخطي {target}: {e}")
+                print(f"✅ [{count}] تم الإرسال إلى: {target}")
+            except:
                 continue
             
         server.quit()
-        return f"✅ نجاح: تم استهداف {count} عميل بنجاح!"
+        return f"✅ نجاح باهر: تم استهداف {count} عميل بنجاح!"
         
     except Exception as e:
-        return f"❌ فشل النظام: {str(e)}"
+        return f"❌ فشل الدخول (535): تأكد من كود الـ 16 حرف في GMAIL_PASS\n{str(e)}"
 
 if __name__ == "__main__":
-    # تشغيل المنظومة
-    report = start_strike()
-    print(report)
+    # تشغيل النظام
+    result = final_strike()
+    print(result)
     
-    # إرسال التقرير النهائي لجوالك مباشرة
+    # إرسال التقرير النهائي لجوالك
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        requests.post(url, json={"chat_id": CHAT_ID, "text": f"⚖️ تقرير العميد 2026:\n{report}"})
+        requests.post(url, json={"chat_id": CHAT_ID, "text": f"⚖️ تقرير العميد:\n{result}"})
     except:
         pass
