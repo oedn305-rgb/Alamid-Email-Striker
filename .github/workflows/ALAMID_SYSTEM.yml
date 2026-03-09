@@ -1,15 +1,22 @@
-name: ALAMID_2026_FINAL
+name: ALAMID_FAST_STRIKE
 on:
   workflow_dispatch:
+
 jobs:
-  run:
+  strike:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      
+      - name: Setup Python
+        uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-      - run: pip install pyTelegramBotAPI
+          cache: 'pip' # سر النجاح: يستخدم الكاش عشان ما يحمل من جديد
+
+      - name: Install Fast
+        run: pip install pyTelegramBotAPI requests --quiet
+
       - name: Launch
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
