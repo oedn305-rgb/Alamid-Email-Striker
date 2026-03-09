@@ -1,23 +1,18 @@
 import os
 import telebot
+import time
 
-# السحب من السيكرتس
 TOKEN = os.getenv("MS_APP_PASS")
-
-if not TOKEN:
-    print("❌ خطأ: التوكن غير موجود في السيكرتس!")
-    exit(1)
-
 bot = telebot.TeleBot(TOKEN)
+
+# سطر سحري يحذف أي تعارض قديم
+bot.delete_webhook(drop_pending_updates=True)
+time.sleep(1)
 
 @bot.message_handler(commands=['start'])
 def welcome(message):
-    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد للاستشارات القانونية 2026.\nجاري تحليل الأهداف الـ 1158...")
-
-@bot.message_handler(func=lambda m: True)
-def handle_all(message):
-    bot.reply_to(message, "⏳ استلمت طلبك.. سيتم الرد آلياً من مكتب العميد.")
+    bot.reply_to(message, "⚖️ مكتب العميد 2026 متصل الآن..\nجاري العمل على الـ 1158 هدف.")
 
 if __name__ == "__main__":
-    print("🚀 [العميد]: البوت متصل الآن...")
+    print("🚀 البوت انطلق...")
     bot.infinity_polling()
