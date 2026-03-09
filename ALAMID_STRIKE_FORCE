@@ -1,63 +1,167 @@
-import os, smtplib, telebot, sys, time
-from email.mime.text import MIMEText
-from email.header import Header
+import os
+import sys
+import time
+import logging
+import re
+from dotenv import load_dotenv
+import telebot
+from telebot import apihelper
 
-# --- الإعدادات ---
-TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
-MY_EMAIL = "oedn305@gmail.com"
-CHAT_ID = "6381014522"
-raw_pass = str(os.getenv("GMAIL_PASS", "")).strip()
-MY_PASS = "".join(filter(lambda x: x.isascii() and not x.isspace(), raw_pass))
+# تحميل متغيرات البيئة
+load_dotenv()
 
-bot = telebot.TeleBot(TOKEN)
+# إعداد logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 
-# --- محرك الرد القانوني (تعديل مشعل: رد كامل ومسند للأنظمة) ---
-@bot.message_handler(func=lambda message: True)
+logger = logging.getLogger(__name__)
+
+# إعدادات البوت
+TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
+
+if not TOKEN:
+    logger.error("❌ BOT_TOKEN غير موجود في ملف .env")
+    sys.exit(1)
+
+# تفعيل إعادة المحاولة التلقائية
+apihelper.RETRY_ON_ERROR = True
+
+# إنشاء البوت
+bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
+
+# قاعدة الردود القانونية
+LEGAL_RESPONSES = {
+
+    "سرقة": {
+        "keywords": ["سرقة", "سرق", "سارق"],
+        "response": (
+            "⚖️ <b>جريمة السرقة في النظام السعودي</b>\n\n"
+            "1️⃣ تعد من الجرائم الجنائية التي تختص بها المحكمة الجزائية.\n"
+            "2️⃣ يتم التحقيق فيها بواسطة <b>النيابة العامة</b>.\n"
+            "3️⃣ قد تصل العقوبة إلى السجن والتعويض حسب ظروف القضية.\n\n"
+            "📌 يفضل تقديم بلاغ عبر تطبيق <b>كلنا أمن</b> أو أقرب مركز شرطة.\n\n"
+            "⚠️ هذا رد إرشادي وليس استشارة قانونية ملزمة."
+        )
+    },
+
+    "فصل": {
+        "keywords": ["فصل", "فصل تعسفي", "انهاء عقد"],
+        "response": (
+            "⚖️ <b>الفصل من العمل</b>\n\n"
+            "وفق <b>نظام العمل السعودي</b>:\n"
+            "لا يجوز فصل العامل دون سبب مشروع.\n\n"
+            "يمكن للعامل رفع دعوى عبر منصة <b>ودي</b> أو وزارة الموارد البشرية.\n\n"
+            "⚠️ ينصح بمراجعة محامٍ مختص."
+        )
+    },
+
+    "طلاق": {
+        "keywords": ["طلاق", "خلع", "انفصال"],
+        "response": (
+            "⚖️ <b>قضايا الطلاق</b>\n\n"
+            "تخضع لنظام <b>الأحوال الشخصية السعودي</b>.\n\n"
+            "يمكن تقديم الطلب عبر منصة <b>ناجز</b> التابعة لوزارة العدل.\n\n"
+            "⚠️ هذا توجيه عام وليس استشارة قانونية."
+        )
+    }
+
+}
+
+def get_legal_response(user_query):
+    """البحث عن رد مناسب"""
+    query = user_query.lower()
+
+    for category, data in LEGAL_RESPONSES.items():
+        for keyword in data["keywords"]:
+            if re.search(keyword, query):
+                return data["response"]
+
+    return (
+        "⚖️ <b>المستشار القانوني الآلي</b>\n\n"
+        "لم أتمكن من تحديد نوع القضية بدقة.\n\n"
+        "يرجى توضيح الاستفسار أكثر مثل:\n"
+        "• سرقة\n"
+        "• فصل من العمل\n"
+        "• طلاق\n"
+        "• قضية مالية\n\n"
+        "وسيتم توجيهك حسب النظام السعودي."
+    )
+
+
+# رسالة الترحيب
+@bot.message_handler(commands=['start'])
+def welcome(message):
+    bot.reply_to(
+        message,
+        "⚖️ <b>مرحباً بك في المستشار القانوني السعودي</b>\n\n"
+        "اكتب سؤالك القانوني وسأحاول توجيهك حسب الأنظمة.\n\n"
+        "مثال:\n"
+        "هل السرقة عليها سجن؟"
+    )
+
+
+# استقبال الرسائل النصية فقط
+@bot.message_handler(content_types=['text'])
 def legal_expert_system(message):
+
     user_query = message.text
-    print(f"📥 استفسار جديد: {user_query}")
-    
-    # رسالة انتظار احترافية
-    bot.send_chat_action(message.chat.id, 'typing')
+    logger.info(f"📩 سؤال من {message.chat.id}: {user_query}")
 
-    if any(word in user_query for word in ["سارق", "سرقة", "سرق"]):
-        response = (
-            "⚖️ **الرأي القانوني الرسمي (جريمة السرقة)**\n\n"
-            "بناءً على **نظام الإجراءات الجزائية** والأنظمة المحدثة من وزارة العدل:\n\n"
-            "1️⃣ **التوصيف النظامي:** تعتبر جريمة السرقة من الجرائم الموجبة للإيقاف وفق القرار الوزاري الصادر بناءً على المادة (112) من نظام الإجراءات الجزائية.\n"
-            "2️⃣ **العقوبة:** تخضع العقوبة لتقدير المحكمة الجزائية (تعزيراً) بالسجن والتعويض، ما لم تكتمل شروط الحد الشرعية التي ينظر فيها القضاء.\n"
-            "3️⃣ **الجهة المختصة:** النيابة العامة (للتحقيق والادعاء)، والمحكمة الجزائية (لإصدار الحكم).\n\n"
-            "📍 **توجيه المكتب:** ننصح بتقديم بلاغ رسمي عبر تطبيق (كلنا أمن) أو مراجعة أقرب مركز شرطة لإثبات الواقعة.\n\n"
-            "✅ **المستند:** الأنظمة العدلية السعودية 2026."
-        )
-    else:
-        response = (
-            "⚖️ **مكتب المستشار القانوني السعودي**\n\n"
-            f"بخصوص طلبكم: ({user_query})\n\n"
-            "🔹 **التحليل:** جاري مطابقة الحالة مع مواد (نظام المرافعات) أو (نظام العمل) حسب الاختصاص.\n"
-            "🔹 **الإجراء:** يمكنك تصعيد الطلب عبر بوابة **(ناجز)** التابعة لوزارة العدل.\n\n"
-            "📩 سيقوم المستشار المختص بتزويدك بالمواد التفصيلية حال اكتمال المراجعة."
-        )
+    try:
+        bot.send_chat_action(message.chat.id, "typing")
 
-    bot.reply_to(message, response, parse_mode="Markdown")
+        response = get_legal_response(user_query)
 
-def start_alamid():
-    # 1. حل مشكلة الـ Conflict (طرد النسخ القديمة)
-    print("🧹 جاري تنظيف الجلسات القديمة...")
+        bot.reply_to(message, response)
+
+    except Exception as e:
+        logger.error(f"❌ خطأ: {e}")
+        bot.reply_to(message, "حدث خطأ داخلي، حاول لاحقًا.")
+
+
+def send_startup_notification():
+    """إشعار عند تشغيل البوت"""
+    if CHAT_ID:
+        try:
+            bot.send_message(
+                CHAT_ID,
+                "✅ تم تشغيل البوت القانوني بنجاح."
+            )
+        except Exception as e:
+            logger.warning(f"⚠️ فشل إرسال إشعار التشغيل: {e}")
+
+
+def start_bot():
+
+    logger.info("🚀 بدء تشغيل البوت")
+
     try:
         bot.remove_webhook()
         time.sleep(1)
-        # سحب آخر التحديثات لتصفير العداد
         bot.get_updates(offset=-1)
-    except: pass
+    except Exception as e:
+        logger.warning(f"⚠️ تحذير أثناء التنظيف: {e}")
 
-    print("🚀 [نظام العميد] متصل الآن وجاهز للرد...")
-    try:
-        bot.send_message(CHAT_ID, "✅ تم تشغيل نظام المستشار بنجاح. البوت يرد الآن بالأنظمة الوزارية.")
-    except: pass
-    
-    # 2. تشغيل الاستماع المستمر
-    bot.infinity_polling(timeout=20, long_polling_timeout=10)
+    send_startup_notification()
+
+    while True:
+
+        try:
+            logger.info("🤖 البوت يعمل...")
+            bot.infinity_polling(
+                timeout=20,
+                long_polling_timeout=10
+            )
+
+        except Exception as e:
+            logger.error(f"❌ خطأ في polling: {e}")
+            logger.info("🔄 إعادة التشغيل بعد 5 ثواني")
+            time.sleep(5)
+
 
 if __name__ == "__main__":
-    start_alamid()
+    start_bot()
