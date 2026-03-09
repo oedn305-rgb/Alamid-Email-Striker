@@ -7,9 +7,9 @@ EMAIL_FILE = "emails.txt"
 
 def start_striker():
 
-    # قراءة البريد وكلمة السر من متغيرات البيئة
-    EMAIL = os.getenv("BOT_EMAIL")       # البريد الجديد للبوت
-    PASSWORD = os.getenv("BOT_EMAIL_PASS")  # App Password المولد من Gmail
+    # قراءة البريد وكلمة السر من GitHub Secrets أو متغيرات البيئة
+    EMAIL = os.getenv("BOT_EMAIL")           # البريد الجديد للبوت
+    PASSWORD = os.getenv("BOT_EMAIL_PASS")   # App Password
 
     if not EMAIL or not PASSWORD:
         print("❌ Secrets ناقصة")
@@ -25,7 +25,7 @@ def start_striker():
     print(f"📡 سيتم الإرسال إلى {len(targets)} إيميل")
 
     try:
-        # استخدام SMTP مع SSL
+        # الاتصال بسيرفر Gmail عبر SSL
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
 
             smtp.login(EMAIL, PASSWORD)
@@ -49,7 +49,7 @@ def start_striker():
 
                 print("✅ تم الإرسال إلى:", target)
 
-                time.sleep(2)  # تأخير بين الرسائل لتجنب الحظر
+                time.sleep(2)  # تأخير بسيط لتجنب الحظر
 
     except Exception as e:
         print("❌ خطأ:", e)
