@@ -1,10 +1,13 @@
-import os, smtplib, telebot, sys, time
+import os, smtplib, telebot, sys
+from email.mime.text import MIMEText
+from email.header import Header
 
-# --- البيانات ---
+# --- سحب البيانات من النظام ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
 MY_EMAIL = "oedn305@gmail.com"
 CHAT_ID = "6381014522"
 
+# سحب المفتاح من السيكرتس وتنظيفه من أي فراغات مخفية
 raw_pass = str(os.getenv("GMAIL_PASS", "")).strip()
 MY_PASS = "".join(filter(lambda x: x.isascii() and not x.isspace(), raw_pass))
 
@@ -14,55 +17,65 @@ def log(text):
 
 bot = telebot.TeleBot(TOKEN)
 
-def start_alamid_batch():
-    log("⚖️ [نظام العميد]: بدء إرسال الدفعة الآمنة (20 إيميل)...")
+# --- الرد القانوني السريع ---
+@bot.message_handler(func=lambda message: True)
+def handle_lawyer_ai(message):
+    log(f"📥 استلام قضية جديدة من: {message.from_user.first_name}")
+    response = (
+        "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
+        f"أهلاً بك يا {message.from_user.first_name}، تم استلام طلبك.\n"
+        "جاري تحليل القضية بناءً على الأنظمة العدلية المحدثة.\n\n"
+        "✅ سيصلك الرد القانوني هنا خلال لحظات."
+    )
+    bot.reply_to(message, response, parse_mode="Markdown")
+
+def start_alamid():
+    log("🚀 [نظام العميد]: بدء العملية...")
     
-    if not os.path.exists("emails.txt"):
-        log("❌ ملف الإيميلات غير موجود.")
-        return
+    # 1. مرحلة الإيميلات (سحب من السيكرتس)
+    if not MY_PASS:
+        log("❌ خطأ: لم يتم العثور على GMAIL_PASS في الملف السري (Secrets)!")
+    else:
+        try:
+            # البحث عن ملف الإيميلات في المشروع
+            targets = []
+            for f_name in ["emails.txt", "Emails.txt", "list.txt"]:
+                if os.path.exists(f_name):
+                    log(f"📂 تم فتح ملف: {f_name}")
+                    with open(f_name, "r", encoding="utf-8") as f:
+                        targets = [l.strip() for l in f if "@" in l]
+                    break
 
-    with open("emails.txt", "r", encoding="utf-8") as f:
-        targets = [l.strip() for l in f if "@" in l]
-    
-    # سنركز فقط على أول 20 إيميل في القائمة
-    batch_targets = targets[:20]
-    log(f"📂 تم تحديد أول {len(batch_targets)} هدف للإرسال اليوم.")
+            if targets:
+                log(f"📧 جاري الاتصال بقوقل لإرسال {len(targets)} إيميل...")
+                server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+                server.login(MY_EMAIL, MY_PASS)
+                log("✅ تم تسجيل الدخول بنجاح!")
 
-    try:
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        server.login(MY_EMAIL, MY_PASS)
-        
-        sent_count = 0
-        for target in batch_targets:
-            try:
-                subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
-                body = "مرحباً بك، نسعد بخدمتك قانونياً عبر بوت تليجرام المباشر:\nhttps://t.me/SaudiLegal_AI_bot"
+                sent_count = 0
+                for target in targets:
+                    try:
+                        msg = MIMEText("يسعدنا خدمتك في مكتبنا القانوني عبر البوت:\nhttps://t.me/SaudiLegal_AI_bot", 'plain', 'utf-8')
+                        msg['Subject'] = Header("استشارة قانونية عاجلة", 'utf-8')
+                        msg['From'] = MY_EMAIL
+                        msg['To'] = target
+                        server.sendmail(MY_EMAIL, [target], msg.as_string())
+                        sent_count += 1
+                        if sent_count % 10 == 0: log(f"📤 تم إرسال {sent_count}...")
+                    except: continue
                 
-                msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n{body}"
-                
-                server.sendmail(MY_EMAIL, [target], msg.encode('utf-8'))
-                sent_count += 1
-                log(f"✅ [{sent_count}/20] تم الإرسال بنجاح إلى: {target}")
+                server.quit()
+                log(f"🏁 انتهى الإرسال! الإجمالي: {sent_count}")
+                try: bot.send_message(CHAT_ID, f"✅ تم إرسال `{sent_count}` إيميل بنجاح.")
+                except: pass
+            else:
+                log("⚠️ لم نجد ملف إيميلات صالح في المشروع!")
+        except Exception as e:
+            log(f"❌ تعطل الإرسال: {e}")
 
-                # انتظار دقيقة كاملة بين كل إيميل وإيميل (نظامي جداً)
-                if sent_count < 20:
-                    log("⏳ انتظار 60 ثانية قبل الإيميل التالي...")
-                    time.sleep(60)
-
-            except Exception as e:
-                log(f"⚠️ خطأ مع {target}: {e}")
-                continue
-        
-        server.quit()
-        log(f"🏁 تمت المهمة اليوم! تم إرسال {sent_count} رسالة بنجاح.")
-        bot.send_message(CHAT_ID, f"⚖️ *تقرير الدفعة اليومية*\n✅ تم إرسال `{sent_count}` إيميل بنجاح وبشكل نظامي.")
-        
-    except Exception as e:
-        log(f"❌ تعطل النظام: {e}")
-
-    # تشغيل البوت لاستقبال القضايا
-    log("⚖️ البوت الآن مستعد لاستقبال القضايا...")
-    bot.infinity_polling()
+    # 2. تشغيل البوت للرد
+    log("⚖️ البوت الآن مستعد للرد الفوري على القضايا...")
+    bot.infinity_polling(timeout=15)
 
 if __name__ == "__main__":
-    start_alamid_batch()
+    start_alamid()
