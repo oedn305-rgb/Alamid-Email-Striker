@@ -1,6 +1,6 @@
-import os, smtplib, requests, telebot, threading
+import os, smtplib, requests, telebot, time
 
-# --- الإعدادات ---
+# --- الإعدادات المسحوبة من السيكرتس ---
 TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()
 MY_EMAIL = "oedn305@gmail.com"
 MY_PASS = str(os.getenv("GMAIL_PASS", "")).strip()
@@ -8,47 +8,44 @@ CHAT_ID = "6381014522"
 
 bot = telebot.TeleBot(TOKEN)
 
-# 1. عقل البوت (الرد على القضايا)
-@bot.message_handler(func=lambda message: True)
-def handle_messages(message):
-    reply = (
-        "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
-        f"أهلاً بك يا {message.from_user.first_name}.\n"
-        "تم استلام قضيتك وجاري عرضها على المستشار المختص.\n\n"
-        "📩 سيصلك الرد هنا فوراً."
-    )
-    bot.reply_to(message, reply, parse_mode="Markdown")
-
-# 2. المهاجم (إرسال الإيميلات)
-def send_emails_task():
-    print("🚀 [1] جاري إرسال الإيميلات للـ 1158 هدف...")
+def run_strike():
+    print("🚀 [1/2] بدء مرحلة الهجوم: إرسال الإيميلات...")
+    sent_count = 0
+    
     try:
+        # قراءة الأهداف
         with open("emails.txt", "r", encoding="utf-8") as f:
             targets = [line.strip() for line in f if "@" in line]
         
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        server.login(MY_EMAIL, MY_PASS)
-        
-        count = 0
-        for target in targets[:100]: 
-            subject = "⚖️ استشارة قانونية عاجلة"
-            body = f"مكتب المستشار السعودي يرحب بكم. للاستشارة المباشرة: https://t.me/SaudiLegal_AI_bot"
-            msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n{body}"
-            server.sendmail(MY_EMAIL, target, msg.encode('utf-8'))
-            count += 1
-            if count % 10 == 0: print(f"✅ تم إرسال {count} إيميل...")
+        if targets:
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.login(MY_EMAIL, MY_PASS)
             
-        server.quit()
-        print(f"🏁 تم الانتهاء من إرسال {count} إيميل بنجاح.")
-        bot.send_message(CHAT_ID, f"✅ تم إرسال {count} إيميل بنجاح والنظام الآن مستعد لاستقبال القضايا.")
+            # إرسال 100 إيميل دفعة واحدة
+            for target in targets[:100]:
+                try:
+                    subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
+                    body = f"للاستشارة الفورية والرد على قضاياكم، تواصلوا معنا عبر البوت الرسمي:\nhttps://t.me/SaudiLegal_AI_bot"
+                    msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\nContent-Type: text/plain; charset=utf-8\n\n{body}"
+                    server.sendmail(MY_EMAIL, target, msg.encode('utf-8'))
+                    sent_count += 1
+                except: continue
+            server.quit()
+            print(f"✅ تم إرسال {sent_count} إيميل بنجاح.")
     except Exception as e:
-        print(f"❌ خطأ في الإرسال: {e}")
+        print(f"❌ فشل في مرحلة الإيميلات: {e}")
+
+    # --- المرحلة الثانية: تشغيل رد البوت ---
+    print("⚖️ [2/2] إيقاظ البوت لاستقبال القضايا...")
+    bot.send_message(CHAT_ID, f"🏁 تم إرسال {sent_count} إيميل.\n\nالبوت الآن 'صاحي' لمدة 5 دقائق لاستقبال قضايا العملاء. ارسل قضيتك الآن!")
+
+    @bot.message_handler(func=lambda message: True)
+    def handle_messages(message):
+        reply = "⚖️ تم استلام قضيتك بنجاح لدى مكتب المستشار القانوني السعودي. جاري مراجعة التفاصيل."
+        bot.reply_to(message, reply)
+
+    # تشغيل البوت لفترة محددة (عشان GitHub ما يعلقه)
+    bot.polling(none_stop=True, interval=0, timeout=20)
 
 if __name__ == "__main__":
-    # تشغيل الإيميلات في خلفية النظام عشان ما تعطل البوت
-    email_thread = threading.Thread(target=send_emails_task)
-    email_thread.start()
-    
-    # تشغيل البوت فوراً لاستقبال الرسايل
-    print("⚖️ البوت الآن صاحي ويسمعك في تليجرام...")
-    bot.infinity_polling(timeout=20, long_polling_timeout=10)
+    run_strike()
