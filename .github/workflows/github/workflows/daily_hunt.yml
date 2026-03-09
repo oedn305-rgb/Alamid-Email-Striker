@@ -1,11 +1,13 @@
-name: Alamid Final System 2026
+name: Alamid Final Strike 2026
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * *' # تشغيل تلقائي 8 صباحاً بتوقيت مكة
 
 jobs:
-  alamid_job:
+  run-alamid:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -16,28 +18,26 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install Dependencies
-        run: pip install pyTelegramBotAPI
+      - name: Install Libs
+        run: pip install pyTelegramBotAPI requests
 
       - name: تشغيل الرادار والمهاجم
         env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
         run: |
-          # تشغيل الرادار أولاً (إذا كان ملف scraper.py موجود)
-          if [ -f "scraper.py" ]; then python scraper.py; fi
-          # تشغيل المهاجم للإرسال
+          python scraper.py
           python striker.py
 
       - name: تشغيل مكتب العميد (البوت)
         env:
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
         run: |
-          # حل مشكلة النجمة - البحث عن الملف وتشغيله
-          FILE_TO_RUN=$(ls ALAMID*.py | head -n 1)
-          if [ -z "$FILE_TO_RUN" ]; then
+          # البحث عن ملف البوت وتشغيله مهما كان اسمه (بشرط يبدأ بـ ALAMID)
+          TARGET_FILE=$(ls ALAMID*.py | head -n 1)
+          if [ -z "$TARGET_FILE" ]; then
             echo "❌ لم يتم العثور على ملف البوت!"
             exit 1
           else
-            echo "✅ جاري تشغيل: $FILE_TO_RUN"
-            python "$FILE_TO_RUN"
+            python "$TARGET_FILE"
           fi
