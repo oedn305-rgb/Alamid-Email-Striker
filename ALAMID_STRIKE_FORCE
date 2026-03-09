@@ -1,6 +1,4 @@
-import os, smtplib, telebot, sys
-from email.mime.text import MIMEText
-from email.header import Header
+import os, smtplib, telebot, sys, time
 
 # --- البيانات ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
@@ -16,60 +14,55 @@ def log(text):
 
 bot = telebot.TeleBot(TOKEN)
 
-def start_alamid():
-    log("🚀 [نظام العميد]: بدء عملية الإرسال المباشر...")
-    sent_count = 0
+def start_alamid_batch():
+    log("⚖️ [نظام العميد]: بدء إرسال الدفعة الآمنة (20 إيميل)...")
     
-    # 1. قراءة الملف
     if not os.path.exists("emails.txt"):
-        log("❌ خطأ: ملف emails.txt غير موجود!")
+        log("❌ ملف الإيميلات غير موجود.")
         return
 
     with open("emails.txt", "r", encoding="utf-8") as f:
         targets = [l.strip() for l in f if "@" in l]
     
-    log(f"📂 تم تحميل {len(targets)} هدف. جاري الاتصال بقوقل...")
+    # سنركز فقط على أول 20 إيميل في القائمة
+    batch_targets = targets[:20]
+    log(f"📂 تم تحديد أول {len(batch_targets)} هدف للإرسال اليوم.")
 
     try:
-        # 2. فتح الاتصال مع قوقل
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(MY_EMAIL, MY_PASS)
-        log("✅ تم الاتصال بنجاح. جاري الإرسال الآن...")
-
-        for target in targets:
+        
+        sent_count = 0
+        for target in batch_targets:
             try:
-                subject = "⚖️ استشارة قانونية عاجلة - مكتب المستشار السعودي"
-                body = "مرحباً، للاستشارة القانونية الفورية تواصل معنا عبر البوت:\nhttps://t.me/SaudiLegal_AI_bot"
+                subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
+                body = "مرحباً بك، نسعد بخدمتك قانونياً عبر بوت تليجرام المباشر:\nhttps://t.me/SaudiLegal_AI_bot"
                 
-                msg = MIMEText(body, 'plain', 'utf-8')
-                msg['Subject'] = Header(subject, 'utf-8')
-                msg['From'] = MY_EMAIL
-                msg['To'] = target
+                msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n{body}"
                 
-                server.sendmail(MY_EMAIL, [target], msg.as_string())
+                server.sendmail(MY_EMAIL, [target], msg.encode('utf-8'))
                 sent_count += 1
-                
-                # طباعة فورية لكل إيميل يتم إرساله
-                log(f"📤 [{sent_count}] تم الإرسال إلى: {target}")
-                
-                # إشعار كل 50 إيميل في تليجرام
-                if sent_count % 50 == 0:
-                    bot.send_message(CHAT_ID, f"✅ تم إرسال {sent_count} إيميل حتى الآن...")
-                    
+                log(f"✅ [{sent_count}/20] تم الإرسال بنجاح إلى: {target}")
+
+                # انتظار دقيقة كاملة بين كل إيميل وإيميل (نظامي جداً)
+                if sent_count < 20:
+                    log("⏳ انتظار 60 ثانية قبل الإيميل التالي...")
+                    time.sleep(60)
+
             except Exception as e:
-                log(f"⚠️ فشل الإرسال لـ {target}: {e}")
+                log(f"⚠️ خطأ مع {target}: {e}")
                 continue
         
         server.quit()
-        log(f"🏁 العملية انتهت. إجمالي المرسل: {sent_count}")
-        bot.send_message(CHAT_ID, f"⚖️ تمت المهمة بنجاح!\nتم إرسال {sent_count} إيميل للعملاء.")
-
+        log(f"🏁 تمت المهمة اليوم! تم إرسال {sent_count} رسالة بنجاح.")
+        bot.send_message(CHAT_ID, f"⚖️ *تقرير الدفعة اليومية*\n✅ تم إرسال `{sent_count}` إيميل بنجاح وبشكل نظامي.")
+        
     except Exception as e:
-        log(f"❌ فشل النظام: {e}")
+        log(f"❌ تعطل النظام: {e}")
 
-    # 3. تشغيل البوت للاستقبال
-    log("⚖️ البوت الآن في وضع الاستقبال...")
+    # تشغيل البوت لاستقبال القضايا
+    log("⚖️ البوت الآن مستعد لاستقبال القضايا...")
     bot.infinity_polling()
 
 if __name__ == "__main__":
-    start_alamid()
+    start_alamid_batch()
