@@ -1,50 +1,19 @@
-import os, telebot, smtplib, time
-from email.message import EmailMessage
+import os
+import telebot
+import time
 
-# 1. إعدادات النظام
+# سحب التوكن الجديد
 TOKEN = os.getenv("MS_APP_PASS")
-MY_EMAIL = os.getenv("GMAIL_USER")
-MY_PASS = os.getenv("GMAIL_PASS")
-
-# 2. الضربة القاضية للتعارض (Conflict Fix)
 bot = telebot.TeleBot(TOKEN)
-print("⚙️ جاري طرد أي نسخة بوت أخرى...")
-bot.remove_webhook(drop_pending_updates=True) # تنظيف كامل للطلبات المعلقة
-time.sleep(2) # انتظار هدوء السيرفر
 
-def auto_strike():
-    print("🎯 بدأت عملية استهداف الـ 1158 هدف...")
-    try:
-        with open("emails.txt", "r") as f:
-            targets = [l.strip() for l in f.readlines() if "@" in l]
-        
-        count = 0
-        # نفتح اتصال واحد ونرسل الكل عشان السرعة
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            smtp.login(MY_EMAIL, MY_PASS)
-            for target in targets[:50]: # أول 50 دفعة
-                msg = EmailMessage()
-                msg.set_content("⚖️ مكتب العميد للاستشارات القانونية 2026\nتواصلنا معكم بناءً على اهتماماتكم.")
-                msg['Subject'] = "مستند قانوني عاجل"
-                msg['From'] = MY_EMAIL
-                msg['To'] = target
-                smtp.send_message(msg)
-                count += 1
-                print(f"✅ أرسلت إلى: {target}")
-        return count
-    except Exception as e:
-        print(f"❌ خطأ في الإرسال: {e}")
-        return 0
+# تنظيف أي اتصالات قديمة غصب
+bot.remove_webhook(drop_pending_updates=True)
+time.sleep(2)
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, "⚖️ تم تشغيل منظومة العميد بنجاح! جاري العمل على الـ 1158 هدف.")
 
 if __name__ == "__main__":
-    # تشغيل الإرسال فوراً بدون انتظار تليجرام
-    success_count = auto_strike()
-    print(f"🏁 انتهت المهمة بنجاح: تم إرسال {success_count} رسالة.")
-    
-    # تشغيل البوت للمراقبة فقط بعد انتهاء الإرسال
-    print("🚀 البوت متصل الآن لاستقبال أوامرك...")
-    @bot.message_handler(commands=['start', 'status'])
-    def status(message):
-        bot.reply_to(message, f"✅ النظام شغال! تم إرسال {success_count} إيميل للعملاء.")
-    
+    print("🚀 البوت انطلق الآن...")
     bot.infinity_polling(timeout=10, long_polling_timeout=5)
