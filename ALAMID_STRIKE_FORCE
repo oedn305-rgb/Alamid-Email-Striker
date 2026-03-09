@@ -1,62 +1,67 @@
 import os, smtplib, requests
 
-# 1. سحب البيانات من السيكرتس (تأكد أن الأسماء مطابقة لما في GitHub)
-TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()  # توكن البوت
-MY_EMAIL = "oedn305@gmail.com"                    # إيميلك ثابت
-MY_PASS = str(os.getenv("GMAIL_PASS", "")).strip() # كود الـ 16 حرف اللي سويته قبل 50 دقيقة
-CHAT_ID = "6381014522"                            # آيدي تليجرام الخاص بك
+# --- الإعدادات (تأكد من صحتها في السيكرتس) ---
+TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()  # توكن تليجرام
+MY_EMAIL = "oedn305@gmail.com"
+MY_PASS = str(os.getenv("GMAIL_PASS", "")).strip() # كود الـ 16 حرف
+CHAT_ID = "6381014522" 
 
-def final_strike():
-    print(f"🚀 [نظام العميد 2026]: بدء الهجوم باستخدام: {MY_EMAIL}")
-    
-    # فحص أمان للسيكرتس
-    if not MY_PASS:
-        return "❌ خطأ: السيكرت GMAIL_PASS فاضي في إعدادات GitHub!"
+def send_strike():
+    print(f"⚖️ [نظام العميد 2026]: بدء إرسال المحتوى المعتمد...")
     
     try:
-        # قراءة الأهداف من الملف
-        if not os.path.exists("emails.txt"):
-            return "❌ خطأ: ملف emails.txt غير موجود!"
-            
         with open("emails.txt", "r", encoding="utf-8") as f:
             targets = [line.strip() for line in f if "@" in line]
         
-        if not targets:
-            return "❌ ملف الأهداف فارغ!"
-
-        # الاتصال المباشر بسيرفر قوقل (الأقوى)
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(MY_EMAIL, MY_PASS)
         
         count = 0
         for target in targets[:100]: 
             try:
-                # صياغة الرسالة "خام" لكسر أي خطأ في البيانات
-                subject = "استشارة قانونية - مكتب العميد"
-                body = "مكتب العميد يرحب بكم ويسعد بخدمتكم."
+                # --- النص الرسمي اللي طلبته (تقدر تعدله هنا) ---
+                subject = "⚖️ مكتب العميد للاستشارات القانونية - تواصل عاجل"
+                body = f"""
+مرحباً بك،
+
+يسعدنا في "مكتب العميد للاستشارات القانونية 2026" التواصل معكم بناءً على طلبكم/اهتماماتكم السابقة. 
+نحن هنا لنقدم لكم الدعم القانوني الاحترافي الذي يستحقه عملاؤنا.
+
+للتواصل المباشر أو الاستفسار:
+- الرد على هذا الإيميل مباشرة.
+- التواصل عبر الواتساب المعتمد للمكتب.
+
+نعتز بثقتكم،
+إدارة مكتب العميد 2026.
+                """
                 
-                raw_msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n{body}"
+                # بناء الرسالة مع دعم اللغة العربية (UTF-8)
+                msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\nContent-Type: text/plain; charset=utf-8\n\n{body}"
                 
-                server.sendmail(MY_EMAIL, target, raw_msg.encode('utf-8'))
+                server.sendmail(MY_EMAIL, target, msg.encode('utf-8'))
                 count += 1
-                print(f"✅ [{count}] تم الإرسال إلى: {target}")
-            except:
-                continue
+                print(f"✅ تم الإرسال إلى: {target}")
+            except: continue
             
         server.quit()
-        return f"✅ نجاح باهر: تم استهداف {count} عميل بنجاح!"
-        
+        return count
     except Exception as e:
-        return f"❌ فشل الدخول (535): تأكد من كود الـ 16 حرف في GMAIL_PASS\n{str(e)}"
+        print(f"❌ خطأ: {e}")
+        return 0
+
+def notify_bot(count):
+    # إرسال تقرير ذكي لبوت تليجرام
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    text = f"⚖️ *تقرير نظام العميد 2026*\n\n✅ تم بنجاح استهداف: `{count}` عميل.\n🎯 الأهداف المتبقية: `{1158 - count}`\n🚀 النظام جاهز للدفعة القادمة."
+    payload = {
+        "chat_id": CHAT_ID, 
+        "text": text, 
+        "parse_mode": "Markdown"
+    }
+    requests.post(url, json=payload)
 
 if __name__ == "__main__":
-    # تشغيل النظام
-    result = final_strike()
-    print(result)
-    
-    # إرسال التقرير النهائي لجوالك
-    try:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        requests.post(url, json={"chat_id": CHAT_ID, "text": f"⚖️ تقرير العميد:\n{result}"})
-    except:
-        pass
+    total_sent = send_strike()
+    if total_sent > 0:
+        notify_bot(total_sent)
+        print(f"🏁 المهمة تمت! أرسلنا لـ {total_sent} عميل.")
