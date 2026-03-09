@@ -1,25 +1,27 @@
-name: ALAMID_FAST_STRIKE
+name: ALAMID_STRIKE_2026
 on:
-  workflow_dispatch:
+  workflow_dispatch: # هذا اللي يطلع لك الزر الأزرق
 
 jobs:
-  strike:
+  run-system:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-          cache: 'pip' # سر النجاح: يستخدم الكاش عشان ما يحمل من جديد
 
-      - name: Install Fast
+      - name: Install Libs
         run: pip install pyTelegramBotAPI requests --quiet
 
-      - name: Launch
+      - name: Launch Strike
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
-        run: python ALAMID_STRIKE_FORCE
+        run: |
+          # تشغيل ملف البوت والمهاجم مباشرة
+          python ALAMID_STRIKE_FORCE
