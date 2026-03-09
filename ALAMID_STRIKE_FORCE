@@ -1,45 +1,50 @@
-import os, telebot, smtplib
+import os, telebot, smtplib, time
 from email.message import EmailMessage
 
-# السحب من السيكرتس
+# 1. إعدادات النظام
 TOKEN = os.getenv("MS_APP_PASS")
 MY_EMAIL = os.getenv("GMAIL_USER")
 MY_PASS = os.getenv("GMAIL_PASS")
 
+# 2. الضربة القاضية للتعارض (Conflict Fix)
+bot = telebot.TeleBot(TOKEN)
+print("⚙️ جاري طرد أي نسخة بوت أخرى...")
+bot.remove_webhook(drop_pending_updates=True) # تنظيف كامل للطلبات المعلقة
+time.sleep(2) # انتظار هدوء السيرفر
+
 def auto_strike():
-    print("🎯 جاري استهداف أول 50 عميل من الـ 1158...")
+    print("🎯 بدأت عملية استهداف الـ 1158 هدف...")
     try:
         with open("emails.txt", "r") as f:
             targets = [l.strip() for l in f.readlines() if "@" in l]
         
         count = 0
+        # نفتح اتصال واحد ونرسل الكل عشان السرعة
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
             smtp.login(MY_EMAIL, MY_PASS)
-            for target in targets[:50]:
+            for target in targets[:50]: # أول 50 دفعة
                 msg = EmailMessage()
-                msg.set_content("⚖️ مكتب العميد للاستشارات القانونية 2026\nخدمتكم شرف لنا.")
-                msg['Subject'] = "تواصل قانوني عاجل"
+                msg.set_content("⚖️ مكتب العميد للاستشارات القانونية 2026\nتواصلنا معكم بناءً على اهتماماتكم.")
+                msg['Subject'] = "مستند قانوني عاجل"
                 msg['From'] = MY_EMAIL
                 msg['To'] = target
                 smtp.send_message(msg)
                 count += 1
-        print(f"✅ تم إرسال {count} إيميل بنجاح!")
+                print(f"✅ أرسلت إلى: {target}")
         return count
     except Exception as e:
-        print(f"❌ خطأ: {e}")
+        print(f"❌ خطأ في الإرسال: {e}")
         return 0
 
 if __name__ == "__main__":
-    # يرسل فوراً أول ما يشتغل السيستم
-    sent_count = auto_strike()
+    # تشغيل الإرسال فوراً بدون انتظار تليجرام
+    success_count = auto_strike()
+    print(f"🏁 انتهت المهمة بنجاح: تم إرسال {success_count} رسالة.")
     
-    # ثم يشغل البوت للرد على استفساراتك
-    bot = telebot.TeleBot(TOKEN)
-    bot.remove_webhook()
-    
-    print("🚀 البوت متصل الآن لمراقبة الردود...")
+    # تشغيل البوت للمراقبة فقط بعد انتهاء الإرسال
+    print("🚀 البوت متصل الآن لاستقبال أوامرك...")
     @bot.message_handler(commands=['start', 'status'])
     def status(message):
-        bot.reply_to(message, f"⚖️ النظام شغال! آخر حملة أرسلت {sent_count} رسالة للعملاء.")
+        bot.reply_to(message, f"✅ النظام شغال! تم إرسال {success_count} إيميل للعملاء.")
     
-    bot.infinity_polling()
+    bot.infinity_polling(timeout=10, long_polling_timeout=5)
