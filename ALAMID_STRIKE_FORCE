@@ -2,12 +2,11 @@ import os, smtplib, telebot, sys
 from email.mime.text import MIMEText
 from email.header import Header
 
-# --- سحب البيانات من السيكرتس ---
+# --- سحب البيانات ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
 MY_EMAIL = "oedn305@gmail.com"
 CHAT_ID = "6381014522"
 
-# سحب كود الـ 16 حرف من السيكرت اللي سميته GMAIL_PASS وتنظيفه
 raw_pass = str(os.getenv("GMAIL_PASS", "")).strip()
 MY_PASS = "".join(filter(lambda x: x.isascii() and not x.isspace(), raw_pass))
 
@@ -23,45 +22,58 @@ def handle_lawyer_ai(message):
     log(f"📥 وصلت قضية من: {message.from_user.first_name}")
     response = (
         "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
-        f"أهلاً بك يا {message.from_user.first_name}، أبشر بسعدك.\n"
-        "تم استلام قضيتك وجاري تحليلها بناءً على الأنظمة المحدثة.\n\n"
-        "✅ سيتم تزويدك بالرأي القانوني المختصر خلال لحظات."
+        f"أهلاً بك يا {message.from_user.first_name}، تم استلام قضيتك.\n"
+        "جاري مراجعة الأنظمة السعودية (العمالية/التجارية/الأحوال الشخصية).\n\n"
+        "✅ سيتم الرد عليك بمذكرة قانونية مختصرة خلال لحظات."
     )
     bot.reply_to(message, response, parse_mode="Markdown")
 
 def start_alamid():
     log("🚀 [نظام العميد]: بدء التشغيل...")
     
-    # 1. إرسال الإيميلات
-    if MY_PASS:
-        try:
-            log(f"📧 محاولة الدخول للإيميل باستخدام السيكرت...")
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-            server.login(MY_EMAIL, MY_PASS)
-            log("✅ تم تسجيل الدخول بنجاح!")
+    # 1. مرحلة قراءة الإيميلات وإرسالها
+    try:
+        # البحث عن أي ملف يحتوي على كلمة email في المشروع
+        email_file = "emails.txt" # تأكد إن هذا هو اسم ملفك في GitHub
+        
+        if os.path.exists(email_file):
+            with open(email_file, "r", encoding="utf-8") as f:
+                # قراءة كل سطر، تنظيفه، والتأكد إنه إيميل حقيقي
+                targets = [l.strip() for l in f if "@" in l]
+            
+            if targets:
+                log(f"📂 تم العثور على {len(targets)} إيميل. جاري الإرسال...")
+                server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+                server.login(MY_EMAIL, MY_PASS)
+                log("✅ تم تسجيل الدخول لسيرفر قوقل!")
 
-            if os.path.exists("emails.txt"):
-                with open("emails.txt", "r", encoding="utf-8") as f:
-                    targets = [l.strip() for l in f if "@" in l]
-                
                 sent = 0
-                for target in targets[:100]:
+                for target in targets: # بيرسل للكل الحين
                     try:
-                        msg = MIMEText("للاستشارة الفورية: https://t.me/SaudiLegal_AI_bot", 'plain', 'utf-8')
-                        msg['Subject'] = Header("استشارة قانونية عاجلة", 'utf-8')
+                        subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
+                        body = "يسعدنا خدمتك في مكتبنا القانوني عبر البوت المباشر:\nhttps://t.me/SaudiLegal_AI_bot"
+                        
+                        msg = MIMEText(body, 'plain', 'utf-8')
+                        msg['Subject'] = Header(subject, 'utf-8')
                         msg['From'] = MY_EMAIL
                         msg['To'] = target
+                        
                         server.sendmail(MY_EMAIL, [target], msg.as_string())
                         sent += 1
+                        if sent % 10 == 0: log(f"📤 تم إرسال {sent}...")
                     except: continue
+                
                 server.quit()
-                log(f"🏁 تم إرسال {sent} إيميل.")
-                try: bot.send_message(CHAT_ID, f"✅ تم إرسال {sent} إيميل بنجاح.")
+                log(f"🏁 تم الانتهاء! إجمالي الإيميلات المرسلة: {sent}")
+                try: bot.send_message(CHAT_ID, f"✅ تم إرسال `{sent}` إيميل بنجاح.")
                 except: pass
-        except Exception as e:
-            log(f"❌ فشل الدخول: {e}")
-    else:
-        log("❌ خطأ: لم يتم العثور على GMAIL_PASS في السيكرتس!")
+            else:
+                log("⚠️ الملف موجود لكن لا يحتوي على إيميلات صالحة!")
+        else:
+            log(f"❌ خطأ: ملف {email_file} غير موجود في المجلد الرئيسي!")
+
+    except Exception as e:
+        log(f"❌ حدث خطأ أثناء الإرسال: {e}")
 
     # 2. تشغيل البوت
     log("⚖️ البوت الآن مستعد للرد الفوري...")
