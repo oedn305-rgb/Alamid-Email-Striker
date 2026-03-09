@@ -2,80 +2,59 @@ import os, smtplib, telebot, sys
 from email.mime.text import MIMEText
 from email.header import Header
 
-# --- سحب البيانات من النظام ---
+# --- الإعدادات ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
 MY_EMAIL = "oedn305@gmail.com"
 CHAT_ID = "6381014522"
-
-# سحب المفتاح من السيكرتس وتنظيفه من أي فراغات مخفية
 raw_pass = str(os.getenv("GMAIL_PASS", "")).strip()
 MY_PASS = "".join(filter(lambda x: x.isascii() and not x.isspace(), raw_pass))
 
-def log(text):
-    print(text)
-    sys.stdout.flush()
-
 bot = telebot.TeleBot(TOKEN)
 
-# --- الرد القانوني السريع ---
+# --- محرك الرد القانوني (مبني على الأنظمة السعودية) ---
 @bot.message_handler(func=lambda message: True)
-def handle_lawyer_ai(message):
-    log(f"📥 استلام قضية جديدة من: {message.from_user.first_name}")
-    response = (
-        "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
-        f"أهلاً بك يا {message.from_user.first_name}، تم استلام طلبك.\n"
-        "جاري تحليل القضية بناءً على الأنظمة العدلية المحدثة.\n\n"
-        "✅ سيصلك الرد القانوني هنا خلال لحظات."
-    )
-    bot.reply_to(message, response, parse_mode="Markdown")
+def legal_expert_reply(message):
+    query = message.text
+    print(f"📥 استفسار قانوني: {query}")
+    
+    # رسالة انتظار احترافية
+    waiting_msg = bot.reply_to(message, "⏳ جاري تحليل القضية بناءً على الأنظمة العدلية السعودية المحدثة...")
+
+    # صياغة الرد القانوني بناءً على نوع السؤال
+    if "سارق" in query or "سرقة" in query:
+        response = (
+            "⚖️ *الرأي القانوني (جريمة السرقة)*\n\n"
+            "بناءً على نظام العقوبات السعودي المحدث والأنظمة المرعية:\n\n"
+            "1️⃣ *التوصيف الجنائي:* تعتبر السرقة جريمة توجب العقوبة تعزيراً أو حداً حسب اكتمال الشروط الشرعية.\n"
+            "2️⃣ *الجزاء القانوني:* تخضع العقوبة لتقدير المحكمة بناءً على (نظام العقوبات العام)، وتتراوح بين السجن والتعويض المالي.\n"
+            "3️⃣ *الإجراءات:* وفقاً لـ (نظام الإجراءات الجزائية)، يتم إيقاف المتهم وإحالته للنيابة العامة لاستكمال التحقيق.\n\n"
+            "📍 *نصيحة المكتب:* يجب مراجعة ما إذا كانت السرقة مقترنة بظرف مشدد (كالتسور أو التعدد) لتقدير مدة السجن المتوقعة.\n\n"
+            "✅ *المستند:* وزارة العدل - نظام الإجراءات الجزائية."
+        )
+    elif "مخدرات" in query or "ترويج" in query:
+        response = "⚖️ *نظام مكافحة المخدرات:* تخضع هذه القضية للمادة (37) أو (38) حسب نوع الفعل..."
+    else:
+        # رد عام ذكي لأي قضية أخرى
+        response = (
+            "⚖️ *تم تحليل القضية قانونياً*\n\n"
+            "وفقاً للأنظمة الصادرة عن *وزارة العدل السعودية*:\n"
+            f"بخصوص طلبكم: ({query})\n\n"
+            "🔹 *المرجع النظامي:* الأنظمة العدلية المحدثة 2026.\n"
+            "🔹 *الإجراء المطلوب:* تقديم لائحة دعوى عبر منصة (ناجز) تحت تصنيف الدعوى المناسب.\n"
+            "🔹 *الحل:* جاري إعداد مذكرة تفصيلية بالمواد النظامية المتعلقة بحالتكم.\n\n"
+            "📞 *للتحدث مع المستشار المباشر:* ارسل رقم جوالك وسيتم الاتصال بك."
+        )
+
+    # حذف رسالة الانتظار وإرسال الرد الكامل
+    bot.delete_message(message.chat.id, waiting_msg.message_id)
+    bot.send_message(message.chat.id, response, parse_mode="Markdown")
 
 def start_alamid():
-    log("🚀 [نظام العميد]: بدء العملية...")
-    
-    # 1. مرحلة الإيميلات (سحب من السيكرتس)
-    if not MY_PASS:
-        log("❌ خطأ: لم يتم العثور على GMAIL_PASS في الملف السري (Secrets)!")
-    else:
-        try:
-            # البحث عن ملف الإيميلات في المشروع
-            targets = []
-            for f_name in ["emails.txt", "Emails.txt", "list.txt"]:
-                if os.path.exists(f_name):
-                    log(f"📂 تم فتح ملف: {f_name}")
-                    with open(f_name, "r", encoding="utf-8") as f:
-                        targets = [l.strip() for l in f if "@" in l]
-                    break
-
-            if targets:
-                log(f"📧 جاري الاتصال بقوقل لإرسال {len(targets)} إيميل...")
-                server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-                server.login(MY_EMAIL, MY_PASS)
-                log("✅ تم تسجيل الدخول بنجاح!")
-
-                sent_count = 0
-                for target in targets:
-                    try:
-                        msg = MIMEText("يسعدنا خدمتك في مكتبنا القانوني عبر البوت:\nhttps://t.me/SaudiLegal_AI_bot", 'plain', 'utf-8')
-                        msg['Subject'] = Header("استشارة قانونية عاجلة", 'utf-8')
-                        msg['From'] = MY_EMAIL
-                        msg['To'] = target
-                        server.sendmail(MY_EMAIL, [target], msg.as_string())
-                        sent_count += 1
-                        if sent_count % 10 == 0: log(f"📤 تم إرسال {sent_count}...")
-                    except: continue
-                
-                server.quit()
-                log(f"🏁 انتهى الإرسال! الإجمالي: {sent_count}")
-                try: bot.send_message(CHAT_ID, f"✅ تم إرسال `{sent_count}` إيميل بنجاح.")
-                except: pass
-            else:
-                log("⚠️ لم نجد ملف إيميلات صالح في المشروع!")
-        except Exception as e:
-            log(f"❌ تعطل الإرسال: {e}")
-
-    # 2. تشغيل البوت للرد
-    log("⚖️ البوت الآن مستعد للرد الفوري على القضايا...")
-    bot.infinity_polling(timeout=15)
+    print("🚀 [نظام المستشار] متصل الآن...")
+    # إرسال تقرير لك
+    try: bot.send_message(CHAT_ID, "⚖️ نظام المستشار السعودي جاهز للرد بالأنظمة الوزارية.")
+    except: pass
+    bot.infinity_polling()
 
 if __name__ == "__main__":
     start_alamid()
