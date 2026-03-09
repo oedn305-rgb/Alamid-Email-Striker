@@ -1,94 +1,48 @@
-import os, smtplib, requests
+import os, smtplib, requests, telebot, time
 
-# --- الإعدادات المسحوبة من GitHub Secrets ---
-TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()  # توكن بوت @SaudiLegal_AI_bot
+# --- الإعدادات ---
+TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()
 MY_EMAIL = "oedn305@gmail.com"
-MY_PASS = str(os.getenv("GMAIL_PASS", "")).strip() # كود الـ 16 حرف من قوقل
-CHAT_ID = "6381014522" # آيدي حسابك الشخصي لتلقي التقرير
+MY_PASS = str(os.getenv("GMAIL_PASS", "")).strip()
+CHAT_ID = "6381014522"
 
-def send_legal_strike():
-    print(f"⚖️ [نظام المستشار القانوني السعودي]: بدء استهداف الـ 1158 هدف...")
-    
+bot = telebot.TeleBot(TOKEN)
+
+# 1. وظيفة استقبال القضايا والرد عليها
+@bot.message_handler(func=lambda message: True)
+def handle_all_messages(message):
+    print(f"📥 وصلت قضية جديدة من: {message.from_user.first_name}")
+    response = (
+        "⚖️ *تم استلام قضيتك بنجاح لدى مكتب المستشار القانوني السعودي*\n\n"
+        "جاري تحليل التفاصيل من قبل فريقنا المختص. سنقوم بالرد عليك خلال دقائق.\n\n"
+        "📞 *للطوارئ القانونية:* يمكنك الرد بكلمة 'اتصال'."
+    )
+    bot.reply_to(message, response, parse_mode="Markdown")
+
+# 2. وظيفة إرسال الإيميلات (المهاجم)
+def send_emails():
+    print("🚀 بدء حملة الإيميلات...")
     try:
-        if not os.path.exists("emails.txt"):
-            print("❌ ملف emails.txt مفقود!")
-            return 0
-            
         with open("emails.txt", "r", encoding="utf-8") as f:
-            targets = [line.strip() for line in f if "@" in line]
+            targets = [l.strip() for l in f if "@" in l]
         
-        if not targets:
-            return 0
-
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(MY_EMAIL, MY_PASS)
         
-        count = 0
-        # إرسال دفعة من 100 هدف
-        for target in targets[:100]: 
-            try:
-                # --- نص الرسالة القانوني المطور مع رابط البوت ---
-                subject = "⚖️ استشارة قانونية فورية - مكتب المستشار القانوني السعودي"
-                
-                # رابط البوت المباشر
-                bot_link = "https://t.me/SaudiLegal_AI_bot"
-                
-                body = f"""
-تحية طيبة وبعد،،
-
-يسعدنا في "مكتب المستشار القانوني السعودي 2026" إفادتكم بجاهزيتنا الكاملة لتقديم الاستشارات القانونية والتمثيل القضائي بكفاءة واحترافية عالية.
-
-🎯 للحصول على استشارة فورية أو التحدث مع المستشار الذكي، تفضل بزيارة منصتنا الرسمية عبر الرابط التالي:
-{bot_link}
-
-لماذا نحن؟
-- سرعة الرد والدقة القانونية.
-- حلول مبتكرة لكافة القضايا (تجارية، عمالية، أحوال شخصية).
-- خصوصية تامة لكافة البيانات.
-
-نحن هنا لحماية حقوقكم وتعزيز موقفكم القانوني.
-
-مع تحيات،
-إدارة التواصل - مكتب المستشار القانوني السعودي 🇸🇦
-                """
-                
-                msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\nContent-Type: text/plain; charset=utf-8\n\n{body}"
-                
-                server.sendmail(MY_EMAIL, target, msg.encode('utf-8'))
-                count += 1
-                print(f"✅ تم الإرسال إلى: {target}")
-            except Exception as e:
-                print(f"⚠️ خطأ في هدف محدد: {e}")
-                continue
-            
+        for target in targets[:100]:
+            subject = "⚖️ استشارة قانونية - مكتب المستشار السعودي"
+            body = f"مرحباً، للاستشارة الفورية ادخل هنا: https://t.me/SaudiLegal_AI_bot"
+            msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n{body}"
+            server.sendmail(MY_EMAIL, target, msg.encode('utf-8'))
         server.quit()
-        return count
-    except Exception as e:
-        print(f"❌ فشل النظام: {e}")
-        return 0
-
-def send_telegram_report(count):
-    # إرسال التقرير من البوت إلى حسابك الشخصي
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    text = (
-        f"⚖️ *تحديث نظام المستشار القانوني السعودي*\n\n"
-        f"✅ تم إرسال الدفعة بنجاح لـ: `{count}` عميل.\n"
-        f"🔗 الرابط المرسل: [SaudiLegal_AI_bot](https://t.me/SaudiLegal_AI_bot)\n"
-        f"📊 المتبقي في القائمة: `{1158 - count}`\n\n"
-        f"🚀 النظام الآن في وضع الانتظار."
-    )
-    payload = {
-        "chat_id": CHAT_ID, 
-        "text": text, 
-        "parse_mode": "Markdown",
-        "disable_web_page_preview": False
-    }
-    requests.post(url, json=payload)
+        return len(targets[:100])
+    except: return 0
 
 if __name__ == "__main__":
-    total_sent = send_legal_strike()
-    if total_sent > 0:
-        send_telegram_report(total_sent)
-        print(f"🏁 تم الإرسال وإبلاغ البوت بنجاح.")
-    else:
-        print("⚠️ لم يتم إرسال أي إيميلات. افحص السيكرتس والملف.")
+    # أولاً: يرسل الإيميلات للناس
+    count = send_emails()
+    bot.send_message(CHAT_ID, f"✅ تم إرسال {count} إيميل. البوت الآن متصل ويستقبل القضايا..")
+    
+    # ثانياً: يفتح البوت "استقبال" وما يقفل (Polling)
+    print("⚖️ البوت الآن مستيقظ ويسمع القضايا...")
+    bot.infinity_polling()
