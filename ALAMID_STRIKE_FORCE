@@ -2,12 +2,14 @@ import os, smtplib, telebot, sys
 from email.mime.text import MIMEText
 from email.header import Header
 
-# --- البيانات (تأكد من الـ 16 حرف) ---
+# --- سحب البيانات من السيكرتس ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
 MY_EMAIL = "oedn305@gmail.com"
-# تنظيف الباسورد تلقائياً من أي مسافات أو رموز عربية مخفية
-MY_PASS = "".join(filter(lambda x: x.isascii() and not x.isspace(), "حط_الـ16_حرف_هنا"))
 CHAT_ID = "6381014522"
+
+# سحب كود الـ 16 حرف من السيكرت اللي سميته GMAIL_PASS وتنظيفه
+raw_pass = str(os.getenv("GMAIL_PASS", "")).strip()
+MY_PASS = "".join(filter(lambda x: x.isascii() and not x.isspace(), raw_pass))
 
 def log(text):
     print(text)
@@ -15,58 +17,54 @@ def log(text):
 
 bot = telebot.TeleBot(TOKEN)
 
-# --- رد البوت الفوري والذكي ---
+# --- الرد القانوني الفوري ---
 @bot.message_handler(func=lambda message: True)
 def handle_lawyer_ai(message):
     log(f"📥 وصلت قضية من: {message.from_user.first_name}")
-    
-    # هنا الرد صار أقوى وأسرع
-    legal_response = (
-        "⚖️ *نظام المستشار القانوني السعودي الذكي*\n\n"
-        f"أهلاً بك يا {message.from_user.first_name}، تم تحليل طلبك أولياً:\n"
-        "📍 الحالة: قيد المراجعة العاجلة.\n"
-        "📜 النظام المعمول به: الأنظمة السعودية المحدثة 2026.\n\n"
-        "✅ *أبشر بسعدك، القضية واضحة وجاري إعداد مذكرة الرد القانونية الآن.*\n"
-        "يرجى الانتظار ثواني وسيتواصل معك المستشار المباشر."
+    response = (
+        "⚖️ *نظام المستشار القانوني السعودي 2026*\n\n"
+        f"أهلاً بك يا {message.from_user.first_name}، أبشر بسعدك.\n"
+        "تم استلام قضيتك وجاري تحليلها بناءً على الأنظمة المحدثة.\n\n"
+        "✅ سيتم تزويدك بالرأي القانوني المختصر خلال لحظات."
     )
-    bot.reply_to(message, legal_response, parse_mode="Markdown")
+    bot.reply_to(message, response, parse_mode="Markdown")
 
 def start_alamid():
-    log("🚀 [نظام العميد]: بدء التشغيل النهائي...")
+    log("🚀 [نظام العميد]: بدء التشغيل...")
     
-    # 1. إرسال الإيميلات أولاً
-    try:
-        log("📧 جاري محاولة الدخول للإيميل...")
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        # استخدام الباسورد المنظف
-        server.login(MY_EMAIL, MY_PASS)
-        log("✅ تم تسجيل الدخول بنجاح!")
+    # 1. إرسال الإيميلات
+    if MY_PASS:
+        try:
+            log(f"📧 محاولة الدخول للإيميل باستخدام السيكرت...")
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.login(MY_EMAIL, MY_PASS)
+            log("✅ تم تسجيل الدخول بنجاح!")
 
-        if os.path.exists("emails.txt"):
-            with open("emails.txt", "r", encoding="utf-8") as f:
-                targets = [l.strip() for l in f if "@" in l]
-            
-            for target in targets[:100]:
-                try:
-                    subject = "⚖️ استشارة قانونية عاجلة"
-                    body = "للاستشارة الفورية: https://t.me/SaudiLegal_AI_bot"
-                    msg = MIMEText(body, 'plain', 'utf-8')
-                    msg['Subject'] = Header(subject, 'utf-8')
-                    msg['From'] = MY_EMAIL
-                    msg['To'] = target
-                    server.sendmail(MY_EMAIL, [target], msg.as_string())
-                except: continue
-            server.quit()
-            log("🏁 خلصنا الإيميلات بنجاح.")
-    except Exception as e:
-        log(f"❌ فشل الدخول للإيميل (تأكد من الـ 16 حرف): {e}")
+            if os.path.exists("emails.txt"):
+                with open("emails.txt", "r", encoding="utf-8") as f:
+                    targets = [l.strip() for l in f if "@" in l]
+                
+                sent = 0
+                for target in targets[:100]:
+                    try:
+                        msg = MIMEText("للاستشارة الفورية: https://t.me/SaudiLegal_AI_bot", 'plain', 'utf-8')
+                        msg['Subject'] = Header("استشارة قانونية عاجلة", 'utf-8')
+                        msg['From'] = MY_EMAIL
+                        msg['To'] = target
+                        server.sendmail(MY_EMAIL, [target], msg.as_string())
+                        sent += 1
+                    except: continue
+                server.quit()
+                log(f"🏁 تم إرسال {sent} إيميل.")
+                try: bot.send_message(CHAT_ID, f"✅ تم إرسال {sent} إيميل بنجاح.")
+                except: pass
+        except Exception as e:
+            log(f"❌ فشل الدخول: {e}")
+    else:
+        log("❌ خطأ: لم يتم العثور على GMAIL_PASS في السيكرتس!")
 
     # 2. تشغيل البوت
     log("⚖️ البوت الآن مستعد للرد الفوري...")
-    try:
-        bot.send_message(CHAT_ID, "🚀 النظام متصل الآن.. جرب ترسل قضية.")
-    except: pass
-    
     bot.infinity_polling(timeout=10, long_polling_timeout=5)
 
 if __name__ == "__main__":
