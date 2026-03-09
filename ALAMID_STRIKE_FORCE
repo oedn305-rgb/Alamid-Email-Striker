@@ -1,34 +1,23 @@
-name: Alamid Final Strike 2026
+import os
+import telebot
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+# السحب من السيكرتس
+TOKEN = os.getenv("MS_APP_PASS")
 
-jobs:
-  run-system:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+if not TOKEN:
+    print("❌ خطأ: التوكن غير موجود في السيكرتس!")
+    exit(1)
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
+bot = telebot.TeleBot(TOKEN)
 
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
+@bot.message_handler(commands=['start'])
+def welcome(message):
+    bot.reply_to(message, "⚖️ مرحباً بك في منصة العميد للاستشارات القانونية 2026.\nجاري تحليل الأهداف الـ 1158...")
 
-      - name: تشغيل الرادار والمهاجم
-        env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-        run: |
-          python scraper.py
-          python striker.py
+@bot.message_handler(func=lambda m: True)
+def handle_all(message):
+    bot.reply_to(message, "⏳ استلمت طلبك.. سيتم الرد آلياً من مكتب العميد.")
 
-      - name: تشغيل مكتب العميد (البوت)
-        env:
-          MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
-        run: python ALAMID_STRIKE_FORCE.py
+if __name__ == "__main__":
+    print("🚀 [العميد]: البوت متصل الآن...")
+    bot.infinity_polling()
