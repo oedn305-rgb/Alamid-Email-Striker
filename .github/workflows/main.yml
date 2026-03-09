@@ -2,71 +2,89 @@ import requests
 import re
 import time
 import random
+from pathlib import Path
+
+EMAIL_FILE = "emails.txt"
+
+SEARCH_QUERIES = [
+    'site:sa "law" "@gmail.com"',
+    'site:sa "محاماة" "@outlook.com"',
+    'site:linkedin.com/in "CEO" "Saudi Arabia" "@gmail.com"',
+    'site:linkedin.com/in "مدير" "السعودية" "@outlook.com"',
+    'site:twitter.com "محامي" "السعودية" "@gmail.com"',
+    'site:sa "عقارات" "@hotmail.com"',
+    'site:sa "شركة" "الرياض" "@gmail.com"'
+]
+
+HEADERS = {
+    "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+}
+
+
+def load_existing_emails():
+    if Path(EMAIL_FILE).exists():
+        with open(EMAIL_FILE, "r") as f:
+            return set(line.strip().lower() for line in f)
+    return set()
+
+
+def save_emails(new_emails):
+    with open(EMAIL_FILE, "a") as f:
+        for email in new_emails:
+            f.write(email + "\n")
+
+
+def extract_emails(text):
+    pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    emails = re.findall(pattern, text)
+
+    clean = set()
+    for email in emails:
+        email = email.lower()
+        if not email.endswith(("png", "jpg", "jpeg", "gif", "pdf", "svg")):
+            clean.add(email)
+
+    return clean
+
 
 def scout_for_leads():
-    # كلمات الصيد الذهبية - تستهدف أصحاب القرار في السعودية لعام 2026
-    search_queries = [
-        'site:sa "law" "@gmail.com"',
-        'site:sa "محاماة" "@outlook.com"',
-        'site:linkedin.com/in/ "CEO" "Saudi Arabia" "@gmail.com"',
-        'site:linkedin.com/in/ "مدير" "السعودية" "@outlook.com"',
-        'site:twitter.com "محامي" "السعودية" "@gmail.com"',
-        'site:sa "عقارات" "@hotmail.com"',
-        'site:sa "شركة" "الرياض" "@gmail.com"'
-    ]
-    
-    found_emails = set()
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
 
-    print("📡 بدأ رادار العميد بمسح الشبكة عن أهداف جديدة...")
+    print("📡 بدء البحث عن إيميلات...")
 
-    for query in search_queries:
+    existing = load_existing_emails()
+    found = set()
+
+    for query in SEARCH_QUERIES:
         try:
-            # البحث عبر محرك البحث
-            url = f"https://www.google.com/search?q={query}"
-            response = requests.get(url, headers=headers, timeout=15)
-            
-            # استخراج الإيميلات باستخدام النمط المتقدم
-            emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', response.text)
-            
-            for email in emails:
-                email_lower = email.lower()
-                # تصفية: استبعاد الصور والملفات غير المفيدة
-                if not email_lower.endswith(('png', 'jpg', 'jpeg', 'gif', 'pdf', 'svg')):
-                    found_emails.add(email_lower)
-            
-            print(f"🔍 تم فحص: {query} ... وجدنا {len(emails)} إيميل")
-            
-            # استراحة عشوائية عشان جوجل ما يشك فينا
-            time.sleep(random.randint(5, 10))
-            
+
+            url = f"https://www.google.com/search?q={query}&num=20"
+
+            response = requests.get(url, headers=HEADERS, timeout=15)
+
+            emails = extract_emails(response.text)
+
+            print(f"🔎 البحث: {query}")
+            print(f"📧 تم العثور على {len(emails)} إيميل")
+
+            found.update(emails)
+
+            sleep_time = random.randint(6, 12)
+            print(f"⏳ انتظار {sleep_time} ثانية...")
+            time.sleep(sleep_time)
+
         except Exception as e:
-            print(f"⚠️ خطأ بسيط في البحث: {e}")
-            continue
+            print("⚠️ خطأ:", e)
 
-    if found_emails:
-        # قراءة الإيميلات القديمة عشان ما نكرر
-        existing_emails = set()
-        try:
-            with open("emails.txt", "r") as f:
-                existing_emails = set(line.strip().lower() for line in f.readlines())
-        except FileNotFoundError:
-            pass
+    new_emails = found - existing
 
-        # إضافة الجديد فقط
-        new_leads = found_emails - existing_emails
-        
-        if new_leads:
-            with open("emails.txt", "a") as f:
-                for email in new_leads:
-                    f.write(email + "\n")
-            print(f"✅ مبروك يا عميد! تم صيد {len(new_leads)} إيميل جديد وحقيقي.")
-        else:
-            print("🌑 الرادار لم يجد إيميلات جديدة في هذه الجولة.")
+    if new_emails:
+        save_emails(new_emails)
+        print(f"✅ تم حفظ {len(new_emails)} إيميل جديد")
     else:
-        print("❌ لم يتم العثور على أي نتائج، جرب تغيير كلمات البحث لاحقاً.")
+        print("🌑 لا يوجد إيميلات جديدة")
+
 
 if __name__ == "__main__":
     scout_for_leads()
