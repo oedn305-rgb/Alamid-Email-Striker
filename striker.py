@@ -28,4 +28,30 @@ def start_striker():
 
             smtp.login(EMAIL, PASSWORD)
 
-            for
+            for target in targets:
+
+                msg = EmailMessage()
+                msg["Subject"] = "عرض خاص"
+                msg["From"] = EMAIL
+                msg["To"] = target
+
+                msg.set_content("""
+مرحباً،
+
+لدينا عرض جديد لخدماتنا.
+
+تواصل معنا لمعرفة التفاصيل.
+""")
+
+                smtp.send_message(msg)
+
+                print("✅ تم الإرسال إلى:", target)
+
+                time.sleep(2)
+
+    except Exception as e:
+        print("❌ خطأ:", e)
+
+
+if __name__ == "__main__":
+    start_striker()
