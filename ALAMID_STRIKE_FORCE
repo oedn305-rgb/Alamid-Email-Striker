@@ -1,66 +1,68 @@
-import os, smtplib, requests, time
-from email.message import EmailMessage
+import os, smtplib, requests
 
-# 1. جلب البيانات من السيكرتس وتحويلها لنصوص صافية
-TOKEN = str(os.getenv("MS_APP_PASS", ""))
-MY_EMAIL = str(os.getenv("GMAIL_USER", ""))
-MY_PASS = str(os.getenv("GMAIL_PASS", ""))
-CHAT_ID = "6381014522" 
+# 1. جلب البيانات والتأكد أنها نصوص صافية تماماً
+TOKEN = str(os.getenv("MS_APP_PASS", "")).strip()
+MY_EMAIL = str(os.getenv("GMAIL_USER", "")).strip()
+MY_PASS = str(os.getenv("GMAIL_PASS", "")).strip()
+CHAT_ID = "6381014522"
 
-def send_strike():
-    print("🎯 [نظام العميد]: بدء استهداف الـ 1158 هدف...")
+def execute_strike():
+    print(f"🚀 [نظام العميد 2026]: بدء استهداف الـ 1158 هدف...")
+    
+    # التأكد من السيكرتس قبل البدء
+    if not MY_EMAIL or "@" not in MY_EMAIL:
+        return "❌ خطأ: السيكرت GMAIL_USER فارغ أو غير صحيح في إعدادات GitHub!"
+    if not MY_PASS:
+        return "❌ خطأ: السيكرت GMAIL_PASS مفقود!"
+
     try:
-        # التأكد من وجود ملف الأهداف
+        # قراءة الأهداف
         if not os.path.exists("emails.txt"):
-            return "❌ خطأ: ملف emails.txt غير موجود في المستودع!"
+            return "❌ خطأ: ملف emails.txt مفقود!"
             
-        # قراءة الإيميلات مع تحديد التشفير لمنع خطأ الـ bytes
         with open("emails.txt", "r", encoding="utf-8") as f:
             targets = [line.strip() for line in f if "@" in line]
         
         if not targets:
-            return "❌ خطأ: لم يتم العثور على أي إيميلات صالحة في الملف."
+            return "❌ ملف الأهداف فارغ!"
 
-        # تجهيز سيرفر قوقل
-        count = 0
+        # الاتصال المباشر بالسيرفر (الأقوى والأضمن)
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(MY_EMAIL, MY_PASS)
         
-        # إرسال لأول 100 هدف (تقدر تزيدها لـ 500 في اليوم)
-        for target in targets[:100]: 
+        count = 0
+        for target in targets[:100]: # يرسل أول 100 هدف لضمان عدم حظر الحساب
             try:
-                msg = EmailMessage()
-                msg.set_content("⚖️ مكتب العميد للاستشارات القانونية 2026\nيسعدنا تواصلكم معنا لتقديم أفضل الخدمات.")
-                msg['Subject'] = "تواصل قانوني عاجل"
-                msg['From'] = MY_EMAIL
-                msg['To'] = target
+                # صياغة الرسالة "خام" يدوياً لكسر خطأ الـ Bytes
+                subject = "استشارة قانونية - مكتب العميد"
+                body = "مكتب العميد يرحب بكم ويسعد بخدمتكم في عام 2026."
                 
-                server.send_message(msg)
+                # بناء هيكل الرسالة الأساسي (Raw Email)
+                header = f"From: {MY_EMAIL}\nTo: {target}\nSubject: {subject}\n\n"
+                full_message = header + body
+                
+                # الإرسال بصيغة UTF-8 لضمان وصول النص العربي
+                server.sendmail(MY_EMAIL, target, full_message.encode('utf-8'))
                 count += 1
-                print(f"✅ [{count}] أرسلت بنجاح إلى: {target}")
+                print(f"✅ [{count}] تم الإرسال بنجاح إلى: {target}")
             except Exception as e:
-                print(f"⚠️ فشل في إرسال إيميل محدد ({target}): {e}")
-            
-        server.quit()
-        return f"✅ تم إرسال {count} رسالة بنجاح من أصل 1158 هدف!"
+                print(f"⚠️ تخطي {target} بسبب: {e}")
+                continue
         
-    except Exception as e:
-        return f"❌ فشل النظام بالكامل: {str(e)}"
+        server.quit()
+        return f"✅ تم استهداف {count} عميل بنجاح!"
 
-def notify_telegram(message):
-    # إرسال التقرير لتليجرام مشعل مباشرة
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message}
-    try:
-        requests.post(url, json=payload, timeout=10)
-        print("📲 تم إرسال التقرير النهائي لتليجرام بنجاح.")
-    except:
-        print("⚠️ لم يصل التقرير لتليجرام لكن الإيميلات أُرسلت.")
+    except Exception as e:
+        return f"❌ فشل فني في النظام: {str(e)}"
 
 if __name__ == "__main__":
-    # تشغيل المنظومة فوراً
-    final_report = send_strike()
-    print(final_report)
+    # تشغيل المهمة
+    report = execute_strike()
+    print(report)
     
-    # إرسال النتيجة لجوالك
-    notify_telegram(f"🚀 [نظام العميد 2026]:\n{final_report}")
+    # إرسال تقرير النجاح لتليجرام مشعل فوراً
+    try:
+        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+        requests.post(url, json={"chat_id": CHAT_ID, "text": f"⚖️ تقرير العميد 2026:\n{report}"})
+    except:
+        pass
