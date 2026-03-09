@@ -1,59 +1,72 @@
 import os, smtplib, telebot, sys
+from email.mime.text import MIMEText
+from email.header import Header
 
-# --- البيانات (تأكد من وضع الـ 16 حرف هنا) ---
+# --- البيانات (تأكد من الـ 16 حرف) ---
 TOKEN = "8717546599:AAHgnXRdPwoz1mV85LZft962ZU19xXnHBks"
 MY_EMAIL = "oedn305@gmail.com"
-MY_PASS = "حط_الـ16_حرف_هنا" 
+MY_PASS = "حط_الـ16_حرف_هنا" # تأكد إنه بدون مسافات في البداية أو النهاية
 CHAT_ID = "6381014522"
 
-# إجبار جيت هاب على إظهار النصوص فوراً
 def log(text):
     print(text)
     sys.stdout.flush()
 
 bot = telebot.TeleBot(TOKEN)
 
-def start_process():
-    log("⚖️ [نظام العميد]: بدأت العملية الآن...")
+def start_alamid():
+    log("⚖️ [نظام العميد]: بدء التشغيل المطور...")
+    sent_count = 0
     
-    # 1. محاولة تسجيل الدخول وإرسال الإيميلات
     try:
-        log(f"📧 جاري محاولة الدخول للإيميل: {MY_EMAIL}")
+        # 1. إعداد الإيميل بطريقة تدعم اللغة العربية
+        log("📧 جاري تسجيل الدخول...")
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(MY_EMAIL, MY_PASS)
-        log("✅ تم تسجيل الدخول بنجاح!")
-        
+        log("✅ دخلنا الإيميل بنجاح!")
+
         if os.path.exists("emails.txt"):
             with open("emails.txt", "r", encoding="utf-8") as f:
                 targets = [l.strip() for l in f if "@" in l]
             
-            log(f"📂 تم العثور على {len(targets)} هدف. جاري الإرسال...")
-            count = 0
-            for target in targets[:50]: # جرب 50 حبة كبداية
-                msg = f"From: {MY_EMAIL}\nTo: {target}\nSubject: استشارة قانونية\n\nتواصل معنا: https://t.me/SaudiLegal_AI_bot"
-                server.sendmail(MY_EMAIL, target, msg.encode('utf-8'))
-                count += 1
-            server.quit()
-            log(f"🏁 تم إرسال {count} إيميل بنجاح.")
-        else:
-            log("❌ ملف emails.txt غير موجود!")
+            log(f"📂 لقينا {len(targets)} هدف. جاري الإرسال...")
             
-    except Exception as e:
-        log(f"❌ تعطل الإرسال بسبب: {e}")
+            for target in targets[:50]:
+                try:
+                    subject = "⚖️ مكتب المستشار القانوني السعودي"
+                    body = "مرحباً، للاستشارة الفورية تواصل معنا: https://t.me/SaudiLegal_AI_bot"
+                    
+                    # تنسيق الرسالة ليدعم العربي 100%
+                    msg = MIMEText(body, 'plain', 'utf-8')
+                    msg['Subject'] = Header(subject, 'utf-8')
+                    msg['From'] = MY_EMAIL
+                    msg['To'] = target
+                    
+                    server.sendmail(MY_EMAIL, [target], msg.as_string())
+                    sent_count += 1
+                except: continue
+            server.quit()
+            log(f"🏁 تم إرسال {sent_count} إيميل.")
+        else:
+            log("❌ ملف الإيميلات مفقود!")
 
-    # 2. تشغيل البوت للرد
-    log("🚀 البوت الآن شغال.. جرب ترسل له رسالة في تليجرام.")
-    
+    except Exception as e:
+        log(f"❌ خطأ قوقل: {e}")
+
+    # 2. تشغيل البوت
+    log("🚀 البوت يحاول الاتصال بك...")
+    try:
+        # محاولة إرسال رسالة لك
+        bot.send_message(CHAT_ID, f"⚖️ تم إرسال {sent_count} إيميل بنجاح!")
+    except:
+        log("⚠️ البوت ما قدر يرسل لك.. (لازم تضغط Start في البوت أولاً)")
+
     @bot.message_handler(func=lambda message: True)
     def reply(message):
-        log(f"📥 استلمت رسالة من {message.from_user.first_name}")
         bot.reply_to(message, "⚖️ تم استلام قضيتك بنجاح لدى مكتب المستشار السعودي.")
 
-    try:
-        bot.send_message(CHAT_ID, "🚀 النظام جاهز ويستقبل القضايا!")
-        bot.polling(non_stop=True, timeout=20)
-    except Exception as e:
-        log(f"❌ البوت واجه مشكلة: {e}")
+    log("⚖️ النظام الآن مستعد لاستقبال القضايا.")
+    bot.infinity_polling()
 
 if __name__ == "__main__":
-    start_process()
+    start_alamid()
