@@ -1,34 +1,49 @@
-import os
-import telebot
-import time
-import requests
+import os, smtplib, requests, time
+from email.message import EmailMessage
 
-# 1. إعدادات النظام
+# 1. جلب البيانات من الخزنة
 TOKEN = os.getenv("MS_APP_PASS")
+MY_EMAIL = os.getenv("GMAIL_USER")
+MY_PASS = os.getenv("GMAIL_PASS")
+CHAT_ID = "6381014522" # حط آيدي حسابك هنا عشان يرسل لك التقرير مباشرة
 
-def start_bot():
+def send_strike():
+    print("🎯 [العميد]: بدأت عملية استهداف الـ 1158 هدف...")
     try:
-        # حذف الـ Webhook يدويًا قبل البدء (حل جذري للتعارض)
-        requests.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook?drop_pending_updates=True")
-        time.sleep(2)
+        with open("emails.txt", "r") as f:
+            targets = [l.strip() for l in f.readlines() if "@" in l]
         
-        bot = telebot.TeleBot(TOKEN)
+        count = 0
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(MY_EMAIL, MY_PASS)
         
-        @bot.message_handler(commands=['start'])
-        def welcome(message):
-            bot.reply_to(message, "⚖️ نظام العميد 2026 متصل الآن!\nجاري معالجة الـ 1158 هدف.")
-
-        print("🚀 [العميد]: البوت انطلق الآن بنجاح...")
-        bot.infinity_polling(timeout=20, long_polling_timeout=10)
-        
+        for target in targets[:100]: # يرسل لأول 100 في كل ضغطة زر
+            msg = EmailMessage()
+            msg.set_content("⚖️ مكتب العميد للاستشارات القانونية 2026\nتواصلنا معكم بناءً على اهتماماتكم.")
+            msg['Subject'] = "مستند قانوني عاجل"
+            msg['From'] = MY_EMAIL
+            msg['To'] = target
+            server.send_message(msg)
+            count += 1
+        server.quit()
+        return f"✅ تم إرسال {count} إيميل بنجاح للعملاء."
     except Exception as e:
-        print(f"⚠️ حدث خطأ: {e}")
-        print("🔄 جاري إعادة المحاولة خلال 5 ثوانٍ...")
-        time.sleep(5)
-        start_bot()
+        return f"❌ فشل الإرسال: {e}"
+
+def notify_telegram(message):
+    # إرسال رسالة لتليجرام بدون تشغيل "بث" يسبب تعارض 409
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": message}
+    try:
+        requests.post(url, json=payload)
+        print("📲 تم إرسال التقرير لتليجرام.")
+    except:
+        print("⚠️ تعذر إرسال التقرير لتليجرام لكن الإيميلات أُرسلت.")
 
 if __name__ == "__main__":
-    if not TOKEN:
-        print("❌ خطأ: التوكن (MS_APP_PASS) غير موجود في السيكرتس!")
-    else:
-        start_bot()
+    # تنفيذ العملية فوراً
+    report = send_strike()
+    print(report)
+    
+    # إبلاغك بالنتيجة على الخاص
+    notify_telegram(f"🚀 تقرير مكتب العميد:\n{report}")
