@@ -1,30 +1,31 @@
-name: Alamid System
+import os
+import smtplib
+import time
+from email.message import EmailMessage
 
-on:
-  workflow_dispatch:
+EMAIL_FILE = "emails.txt"
 
-jobs:
-  run-system:
-    runs-on: ubuntu-latest
+def start_striker():
 
-    steps:
+    EMAIL = os.getenv("GMAIL_USER")
+    PASSWORD = os.getenv("GMAIL_PASS")
 
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    if not EMAIL or not PASSWORD:
+        print("❌ Secrets ناقصة")
+        return
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+    if not os.path.exists(EMAIL_FILE):
+        print("❌ ملف emails.txt غير موجود")
+        return
 
-      - name: Install libraries
-        run: pip install python-dotenv
+    with open(EMAIL_FILE, "r") as f:
+        targets = [line.strip() for line in f if "@" in line]
 
-      - name: Clean Emails
-        run: python radar.py
+    print(f"📡 سيتم الإرسال إلى {len(targets)} إيميل")
 
-      - name: Send Emails
-        env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-        run: python striker.py
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+
+            smtp.login(EMAIL, PASSWORD)
+
+            for
