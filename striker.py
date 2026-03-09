@@ -2,69 +2,62 @@ import os
 import smtplib
 import time
 from email.message import EmailMessage
-from dotenv import load_dotenv
-
-load_dotenv()  # لقراءة ملف .env محلي أو GitHub Secrets
 
 EMAIL_FILE = "emails.txt"
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 465
-SEND_LIMIT = 50  # عدد الإيميلات لكل تشغيل
+LIMIT = 50
 
 def load_emails():
-    """تحميل وتنظيف الإيميلات"""
     if not os.path.exists(EMAIL_FILE):
-        print(f"❌ الملف {EMAIL_FILE} غير موجود!")
+        print("❌ ملف emails.txt غير موجود")
         return []
+
     with open(EMAIL_FILE, "r") as f:
-        emails = set(line.strip().lower() for line in f if "@" in line)
-    return list(emails)
+        return [line.strip() for line in f if "@" in line]
+
 
 def start_striker():
-    MY_EMAIL = os.getenv("GMAIL_USER")
-    GMAIL_PASS = os.getenv("GMAIL_PASS")
 
-    if not MY_EMAIL or not GMAIL_PASS:
-        print("❌ نقص في GitHub Secrets (GMAIL_USER / GMAIL_PASS)!")
+    EMAIL = os.getenv("GMAIL_USER")
+    PASS = os.getenv("GMAIL_PASS")
+
+    if not EMAIL or not PASS:
+        print("❌ Secrets ناقصة")
         return
 
-    emails = load_emails()
-    if not emails:
-        print("⚠️ لا يوجد أهداف للإرسال.")
-        return
+    targets = load_emails()[:LIMIT]
 
-    targets = emails[:SEND_LIMIT]
-    print(f"📡 بدء الحملة... سيتم استهداف {len(targets)} عميل.")
+    print(f"📡 سيتم إرسال رسائل إلى {len(targets)} عميل")
 
     try:
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp:
-            smtp.login(MY_EMAIL, GMAIL_PASS)
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(EMAIL, PASS)
+
             for target in targets:
+
                 msg = EmailMessage()
-                msg["Subject"] = "⚖️ عرض قانوني خاص من منصة العميد"
-                msg["From"] = MY_EMAIL
+                msg["Subject"] = "⚖️ عرض قانوني خاص"
+                msg["From"] = EMAIL
                 msg["To"] = target
-                msg.set_content(
-                    f"""
+
+                msg.set_content("""
 مرحباً،
 
-منصة العميد تقدم خدمات قانونية ذكية لعام 2026.
+نقدم لكم خدمات قانونية ذكية لعام 2026.
 
-🎁 عرض خاص: تجربة مجانية لمدة 7 أيام.
+🎁 تجربة مجانية 7 أيام
 
-للتواصل مباشرة عبر البوت:
 https://t.me/اسم_بوتك
-"""
-                )
-                try:
-                    smtp.send_message(msg)
-                    print(f"✅ تم الإرسال إلى: {target}")
-                    time.sleep(2)
-                except Exception as e:
-                    print(f"❌ فشل الإرسال إلى {target}: {e}")
+""")
+
+                smtp.send_message(msg)
+
+                print("✅ تم الإرسال:", target)
+
+                time.sleep(2)
 
     except Exception as e:
-        print(f"❌ فشل الاتصال بخادم البريد: {e}")
+        print("❌ خطأ:", e)
+
 
 if __name__ == "__main__":
     start_striker()
