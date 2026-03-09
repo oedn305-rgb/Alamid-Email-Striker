@@ -4,11 +4,9 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-  schedule:
-    - cron: '0 5 * * *'
 
 jobs:
-  run-alamid:
+  run-system:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -19,25 +17,18 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install Libs
-        run: pip install pyTelegramBotAPI requests
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
 
-      - name: تشغيل الإرسال
+      - name: تشغيل الرادار والمهاجم
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
         run: |
-          if [ -f "scraper.py" ]; then python scraper.py; fi
-          if [ -f "striker.py" ]; then python striker.py; fi
+          python scraper.py
+          python striker.py
 
-      - name: تشغيل البوت
+      - name: تشغيل مكتب العميد (البوت)
         env:
           MS_APP_PASS: ${{ secrets.MS_APP_PASS }}
-        run: |
-          FILE=$(ls ALAMID*.py | head -n 1)
-          if [ -z "$FILE" ]; then
-            echo "❌ لم يتم العثور على ملف البوت!"
-            exit 1
-          else
-            python "$FILE"
-          fi
+        run: python ALAMID_STRIKE_FORCE.py
