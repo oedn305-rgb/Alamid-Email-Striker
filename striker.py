@@ -4,16 +4,23 @@ import time
 from email.message import EmailMessage
 
 EMAIL_FILE = "emails.txt"
+PROGRESS_FILE = "sent_progress.txt"
 
-# إعدادات السلامة لتجنب حظر Gmail
-BATCH_SIZE = 100            # عدد الإيميلات في كل دفعة
-DELAY_BETWEEN_EMAILS = 3    # ثواني بين كل رسالة
-DELAY_BETWEEN_BATCHES = 300 # ثواني بين كل دفعة (5 دقائق)
+DAILY_LIMIT = 30           # عدد الإيميلات التي ترسل كل يوم
+DELAY_BETWEEN_EMAILS = 10  # ثواني بين كل رسالة لتجنب الحظر
+
+def load_progress():
+    if os.path.exists(PROGRESS_FILE):
+        with open(PROGRESS_FILE, "r") as f:
+            return int(f.read().strip())
+    return 0
+
+def save_progress(index):
+    with open(PROGRESS_FILE, "w") as f:
+        f.write(str(index))
 
 def start_striker():
-
-    # قراءة البريد وكلمة السر من GitHub Secrets أو متغيرات البيئة
-    EMAIL = os.getenv("BOT_EMAIL")          # البريد الجديد للبوت
+    EMAIL = os.getenv("BOT_EMAIL")          # البريد من Secrets
     PASSWORD = os.getenv("BOT_EMAIL_PASS")  # App Password
 
     if not EMAIL or not PASSWORD:
@@ -24,29 +31,30 @@ def start_striker():
         print("❌ ملف emails.txt غير موجود")
         return
 
-    # قراءة الإيميلات المستهدفة
     with open(EMAIL_FILE, "r") as f:
         targets = [line.strip() for line in f if "@" in line]
 
-    print(f"📡 سيتم الإرسال إلى {len(targets)} إيميل")
+    start_index = load_progress()
+    end_index = min(start_index + DAILY_LIMIT, len(targets))
+    todays_targets = targets[start_index:end_index]
+
+    print(f"📡 سيتم إرسال {len(todays_targets)} إيميل اليوم")
+
+    if not todays_targets:
+        print("✅ لا توجد إيميلات جديدة للإرسال اليوم")
+        return
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-
             smtp.login(EMAIL, PASSWORD)
 
-            # تقسيم الإيميلات إلى دفعات لتجنب الحظر
-            for i in range(0, len(targets), BATCH_SIZE):
-                batch = targets[i:i+BATCH_SIZE]
+            for target in todays_targets:
+                msg = EmailMessage()
+                msg["Subject"] = "عرض خاص"
+                msg["From"] = EMAIL
+                msg["To"] = target
 
-                for target in batch:
-                    msg = EmailMessage()
-                    msg["Subject"] = "عرض خاص"
-                    msg["From"] = EMAIL
-                    msg["To"] = target
-
-                    # نص الإيميل مع رابط البوت
-                    msg.set_content(f"""
+                msg.set_content(f"""
 مرحباً،
 
 لدينا عرض جديد لخدماتنا.
@@ -56,12 +64,13 @@ https://t.me/SaudiLegal_AI_bot
 
 تواصل معنا لمعرفة التفاصيل.
 """)
-                    smtp.send_message(msg)
-                    print("✅ تم الإرسال إلى:", target)
-                    time.sleep(DELAY_BETWEEN_EMAILS)
+                smtp.send_message(msg)
+                print("✅ تم الإرسال إلى:", target)
+                time.sleep(DELAY_BETWEEN_EMAILS)
 
-                print(f"🕒 الانتظار {DELAY_BETWEEN_BATCHES} ثانية قبل الدفعة التالية")
-                time.sleep(DELAY_BETWEEN_BATCHES)
+        # حفظ التقدم حتى يبدأ من هنا في اليوم التالي
+        save_progress(end_index)
+        print("✅ تم تحديث التقدم للإيميلات القادمة")
 
     except Exception as e:
         print("❌ خطأ:", e)
