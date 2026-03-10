@@ -5,16 +5,16 @@ from email.message import EmailMessage
 
 EMAIL_FILE = "emails.txt"
 
-# إعدادات السلامة لتجنب الحظر
-BATCH_SIZE = 50              # عدد الإيميلات في كل دفعة
-DELAY_BETWEEN_EMAILS = 3     # ثواني بين كل رسالة
-DELAY_BETWEEN_BATCHES = 300  # ثواني بين كل دفعة (5 دقائق)
+# إعدادات السلامة لتجنب حظر Gmail
+BATCH_SIZE = 100            # عدد الإيميلات في كل دفعة
+DELAY_BETWEEN_EMAILS = 3    # ثواني بين كل رسالة
+DELAY_BETWEEN_BATCHES = 300 # ثواني بين كل دفعة (5 دقائق)
 
 def start_striker():
 
     # قراءة البريد وكلمة السر من GitHub Secrets أو متغيرات البيئة
-    EMAIL = os.getenv("BOT_EMAIL")           # بريد Gmail للبوت
-    PASSWORD = os.getenv("BOT_EMAIL_PASS")   # App Password 16 حرف
+    EMAIL = os.getenv("BOT_EMAIL")          # البريد الجديد للبوت
+    PASSWORD = os.getenv("BOT_EMAIL_PASS")  # App Password
 
     if not EMAIL or not PASSWORD:
         print("❌ Secrets ناقصة")
@@ -35,7 +35,7 @@ def start_striker():
 
             smtp.login(EMAIL, PASSWORD)
 
-            # تقسيم الإيميلات إلى دفعات
+            # تقسيم الإيميلات إلى دفعات لتجنب الحظر
             for i in range(0, len(targets), BATCH_SIZE):
                 batch = targets[i:i+BATCH_SIZE]
 
@@ -65,7 +65,6 @@ https://t.me/SaudiLegal_AI_bot
 
     except Exception as e:
         print("❌ خطأ:", e)
-
 
 if __name__ == "__main__":
     start_striker()
