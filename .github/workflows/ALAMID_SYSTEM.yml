@@ -1,34 +1,28 @@
 name: Send Emails
 
 on:
-  workflow_dispatch: # لتشغيل يدويًا
+  workflow_dispatch:
   schedule:
-    - cron: '0 9 * * *' # كل يوم الساعة 9 صباحًا
+    - cron: '0 9 * * *'  # كل يوم الساعة 9 صباحًا
 
 jobs:
   send_emails:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3 # تحميل الكود من المستودع
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x' # تحديد إصدار Python
-
+          python-version: '3.x'
       - name: Install requirements
-        run: |
-          pip install -r requirements.txt # تثبيت المتطلبات من ملف requirements.txt
-
+        run: pip install -r requirements.txt
       - name: Run striker.py
-        run: python striker.py # تشغيل سكربت البوت
+        run: python striker.py
         env:
-          BOT_EMAIL: ${{ secrets.BOT_EMAIL }} # استخدام السر من GitHub Secrets لتحديد البريد الإلكتروني
-          BOT_EMAIL_PASS: ${{ secrets.BOT_EMAIL_PASS }} # استخدام السر من GitHub Secrets لتحديد كلمة المرور
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }} # استخدام السر من GitHub Secrets لتحديد توكن البوت
-          CHAT_ID: ${{ secrets.CHAT_ID }} # استخدام السر من GitHub Secrets لتحديد chat_id الخاص بك
-
+          BOT_EMAIL: ${{ secrets.BOT_EMAIL }}
+          BOT_EMAIL_PASS: ${{ secrets.BOT_EMAIL_PASS }}
       - name: Run python-telegram-bot
-        run: python python-telegram-bot.py # تشغيل سكربت البوت الخاص بـ Telegram
+        run: python python-telegram-bot.py  # تأكد من أن الملف موجود في المسار الصحيح
         env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }} # التوكن من GitHub Secrets
-          CHAT_ID: ${{ secrets.CHAT_ID }} # معرّف المحادثة (chat_id)
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
