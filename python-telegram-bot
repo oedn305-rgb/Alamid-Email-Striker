@@ -1,0 +1,41 @@
+import os
+from telegram import Bot
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+
+# الحصول على BOT_TOKEN و CHAT_ID من GitHub Secrets أو متغيرات البيئة
+TOKEN = os.getenv('BOT_TOKEN')  # استبدلها بالتوكن الخاص بك
+CHAT_ID = os.getenv('CHAT_ID')  # استبدلها بـ chat_id الخاص بك
+
+# وظيفة رد البوت عند إرسال أمر /start
+def start(update, context):
+    update.message.reply_text("مرحبًا! أنا بوت مستشار قانوني. كيف يمكنني مساعدتك؟")
+
+# وظيفة رد البوت عند إرسال أي رسالة نصية
+def echo(update, context):
+    update.message.reply_text(f"أنت قلت: {update.message.text}")
+
+# وظيفة لإرسال رسالة مجدولة
+def send_scheduled_message(context):
+    context.bot.send_message(chat_id=CHAT_ID, text="هذه رسالة مجدولة!")
+
+# إعداد البوت وإضافة الوظائف
+def main():
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    # إضافة الأوامر
+    dp.add_handler(CommandHandler("start", start))
+
+    # إضافة MessageHandler للتفاعل مع أي رسالة نصية
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+
+    # إرسال رسالة مجدولة كل 60 ثانية
+    job_queue = updater.job_queue
+    job_queue.run_repeating(send_scheduled_message, interval=60, first=0)
+
+    # بدء البوت
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
