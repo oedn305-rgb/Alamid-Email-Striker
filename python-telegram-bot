@@ -1,6 +1,6 @@
 import os
 from telegram import Bot
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters, Application
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 # الحصول على BOT_TOKEN و CHAT_ID من GitHub Secrets أو متغيرات البيئة
 TOKEN = os.getenv('BOT_TOKEN')  # استبدلها بالتوكن الخاص بك
